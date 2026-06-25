@@ -1,0 +1,5 @@
+palier,description,year_min,year_max,n_sample,n_estim,variable,control,coef,se,p,collin
+C,3 measures core (binding DPI/GSDB),1995,2023,810230,778448,ipd,"",-0.0230895667802135,0.0218386639337988,0.290384148788463,""
+C,3 measures core (binding DPI/GSDB),1995,2023,810230,778448,polyarchy_dist,"",-0.0200414173530233,0.0605579336745109,0.740685132270735,""
+C,3 measures core (binding DPI/GSDB),1995,2023,810230,778448,sanction_nontrade,"",-0.0803877356713089,0.019884771890339,5.28441022508185e-05,""
+C,3 measures core (binding DPI/GSDB),1995,2023,810230,778448,n_common_sanctioners,"",0.0736385072441622,0.0173856513100557,2.2795141962614e-05,""

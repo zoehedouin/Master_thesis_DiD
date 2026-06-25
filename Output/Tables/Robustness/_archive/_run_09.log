@@ -1,0 +1,74 @@
+Warning messages:
+1: package 'arrow' was built under R version 4.3.3 
+2: package 'data.table' was built under R version 4.3.3 
+3: package 'fixest' was built under R version 4.3.3 
+[18:57:08] Setup. SMOKE=FALSE  RUN_INTERACTIONS=TRUE
+[18:57:08] Section 1 : load iv_panel + merge master_panel.
+           used  (Mb) gc trigger  (Mb) limit (Mb) max used  (Mb)
+Ncells   998012  53.3    1870021  99.9         NA  1325881  70.9
+Vcells 36014573 274.8   95027512 725.1      16384 79927745 609.9
+  - N (ipd non-NA) : 1031492 
+[18:57:18] BLOC 1 : grille de mesure.
+[18:57:18]   Palier D : periode propre par mesure.
+  [D] polyarchy_dist         N=838286  (1995-2024)
+NOTE: 16,481 observations removed because of NA values (RHS: 16,481).
+NOTE: 16,481 observations removed because of NA values (RHS: 16,481).
+  [D] polity_dist            N=563942  (1995-2018)
+NOTE: 10,661 observations removed because of NA values (RHS: 10,661).
+NOTE: 10,661 observations removed because of NA values (RHS: 10,661).
+  [D] shared_rival_mid       N=674276  (1995-2014)
+NOTE: 9,349 observations removed because of NA values (RHS: 9,349).
+NOTE: 9,349 observations removed because of NA values (RHS: 9,349).
+  [D] sanction_nontrade      N=996710  (1995-2023)
+NOTE: 15,721 observations removed because of NA values (RHS: 15,721).
+NOTE: 15,721 observations removed because of NA values (RHS: 15,721).
+The variable 'I(sanction_nontrade^2)' has been removed because of collinearity (see $collin.var).
+  [D] n_common_sanctioners   N=996710  (1995-2023)
+NOTE: 15,721 observations removed because of NA values (RHS: 15,721).
+NOTE: 15,721 observations removed because of NA values (RHS: 15,721).
+[19:16:59]   Palier D : ancre IPD periode complete.
+NOTE: 17,363 observations removed because of NA values (RHS: 17,363).
+[19:19:39]   Paliers A / B / C : echantillon commun.
+  [A] N=476778  (1995-2014)  vars: polyarchy_dist, polity_dist, shared_rival_mid, sanction_nontrade, n_common_sanctioners
+NOTE: 8,573 observations removed because of NA values (RHS: 8,573).
+NOTE: 8,573 observations removed because of NA values (RHS: 8,573).
+NOTE: 8,573 observations removed because of NA values (RHS: 8,573).
+NOTE: 8,573 observations removed because of NA values (RHS: 8,573).
+NOTE: 8,573 observations removed because of NA values (RHS: 8,573).
+NOTE: 8,573 observations removed because of NA values (RHS: 8,573).
+The variable 'I(sanction_nontrade^2)' has been removed because of collinearity (see $collin.var).
+  [B] N=563942  (1995-2018)  vars: polyarchy_dist, polity_dist, sanction_nontrade, n_common_sanctioners
+NOTE: 10,661 observations removed because of NA values (RHS: 10,661).
+NOTE: 10,661 observations removed because of NA values (RHS: 10,661).
+NOTE: 10,661 observations removed because of NA values (RHS: 10,661).
+NOTE: 10,661 observations removed because of NA values (RHS: 10,661).
+NOTE: 10,661 observations removed because of NA values (RHS: 10,661).
+The variable 'I(sanction_nontrade^2)' has been removed because of collinearity (see $collin.var).
+  [C] N=810230  (1995-2023)  vars: polyarchy_dist, sanction_nontrade, n_common_sanctioners
+NOTE: 15,273 observations removed because of NA values (RHS: 15,273).
+NOTE: 15,273 observations removed because of NA values (RHS: 15,273).
+NOTE: 15,273 observations removed because of NA values (RHS: 15,273).
+NOTE: 15,273 observations removed because of NA values (RHS: 15,273).
+The variable 'I(sanction_nontrade^2)' has been removed because of collinearity (see $collin.var).
+[19:37:12] BLOC 1 termine.
+[19:37:12] BLOC 2 : grille temporelle.
+NOTE: 9,076 observations removed because of NA values (RHS: 9,076).
+  [compoC_fixe] fenetre 1995-2014 : 11 specs
+NOTE: 11,389 observations removed because of NA values (RHS: 11,389).
+  [compoC_fixe] fenetre 1995-2018 : 11 specs
+NOTE: 15,273 observations removed because of NA values (RHS: 15,273).
+  [compoC_fixe] fenetre 1995-2023 : 11 specs
+NOTE: 17,363 observations removed because of NA values (RHS: 17,363).
+  [full] fenetre 1995-2024 : 11 specs
+NOTE: 9,349 observations removed because of NA values (RHS: 9,349).
+  [full] fenetre 1995-2014 : 11 specs
+NOTE: 8,014 observations removed because of NA values (RHS: 8,014).
+  [full] fenetre 2015-2024 : 11 specs
+[19:43:39] BLOC 2 termine.
+[19:43:39] Generation report_estimations.md.
+[19:43:39] Termine.
+
+Sorties :
+ /Users/zoe/Desktop/Master_thesis/Output/Tables/Robustness/tab_grille_mesures.csv 
+ /Users/zoe/Desktop/Master_thesis/Output/Tables/Robustness/tab_grille_temporelle.csv 
+ /Users/zoe/Desktop/Master_thesis/Output/Tables/Robustness/report_estimations.md 

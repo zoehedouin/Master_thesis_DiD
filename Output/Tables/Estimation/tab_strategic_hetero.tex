@@ -1,0 +1,33 @@
+
+\begin{table}[htbp]
+   \caption{IPD Effect: Total vs Strategic vs Non-Strategic Trade}
+   \centering
+   \begin{tabular}{lccc}
+      \tabularnewline \midrule \midrule
+      Dependent Variables: & trade\_value          & strategic\_trade\_value   & non\_strategic\_trade\\    
+                           & Total                 & Strategic                 & Non-Strategic \\   
+      Model:               & (1)                   & (2)                       & (3)\\  
+      \midrule
+      \emph{Variables}\\
+      IPD                  & -0.0663$^{**}$        & -0.0126                   & -0.0728$^{**}$\\   
+                           & (0.0318)              & (0.0440)                  & (0.0323)\\   
+      RTA                  & 0.1141$^{***}$        & 0.2229$^{***}$            & 0.1044$^{***}$\\   
+                           & (0.0235)              & (0.0520)                  & (0.0233)\\   
+      \midrule
+      \emph{Fixed-effects}\\
+      exp\_year            & Yes                   & Yes                       & Yes\\  
+      imp\_year            & Yes                   & Yes                       & Yes\\  
+      pair                 & Yes                   & Yes                       & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations         & 965,872               & 733,288                   & 965,118\\  
+      Squared Correlation  & 0.98343               & 0.94421                   & 0.98430\\  
+      Pseudo R$^2$         & 0.99024               & 0.97612                   & 0.98997\\  
+      BIC                  & $2.65\times 10^{10}$  & -2,147,483,648.5          & $2.55\times 10^{10}$\\   
+      \midrule \midrule
+      \multicolumn{4}{l}{\emph{Clustered (pair) standard-errors in parentheses}}\\
+      \multicolumn{4}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+\end{table}
+
+

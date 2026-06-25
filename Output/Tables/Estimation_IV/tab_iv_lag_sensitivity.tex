@@ -1,0 +1,38 @@
+
+\begin{table}[htbp]
+   \caption{CF-IV Sensitivity to Instrument Lag}
+   \centering
+   \begin{tabular}{lccccc}
+      \tabularnewline \midrule \midrule
+      Dependent Variable: & \multicolumn{5}{c}{trade\_value}\\
+                          & Lag 0                 & Lag 1                & Lag 2                 & Lag 3                & Lag 5 \\   
+      Model:              & (1)                   & (2)                  & (3)                   & (4)                  & (5)\\  
+      \midrule
+      \emph{Variables}\\
+      IPD                 & 0.0225                & 0.0489               & 0.1244$^{***}$        & 0.2043$^{***}$       & 0.4557$^{***}$\\   
+                          & (0.0181)              & (0.0301)             & (0.0391)              & (0.0571)             & (0.1014)\\   
+      CF residual         & 0.0334                & -0.0449$^{*}$        & -0.1434$^{***}$       & -0.2257$^{***}$      & -0.4680$^{***}$\\   
+                          & (0.0303)              & (0.0241)             & (0.0333)              & (0.0505)             & (0.0964)\\   
+      RTA                 & 0.0730$^{***}$        & 0.0764$^{***}$       & 0.0815$^{***}$        & 0.0854$^{***}$       & 0.0925$^{***}$\\   
+                          & (0.0206)              & (0.0205)             & (0.0205)              & (0.0204)             & (0.0207)\\   
+      \midrule
+      \emph{Fixed-effects}\\
+      exp\_year           & Yes                   & Yes                  & Yes                   & Yes                  & Yes\\  
+      imp\_year           & Yes                   & Yes                  & Yes                   & Yes                  & Yes\\  
+      pair                & Yes                   & Yes                  & Yes                   & Yes                  & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations        & 932,992               & 895,853              & 864,035               & 833,442              & 773,542\\  
+      Squared Correlation & 0.98611               & 0.98619              & 0.98633               & 0.98647              & 0.98671\\  
+      Pseudo R$^2$        & 0.98703               & 0.98710              & 0.98720               & 0.98731              & 0.98745\\  
+      BIC                 & $1.84\times 10^{10}$  & $1.8\times 10^{10}$  & $1.75\times 10^{10}$  & $1.7\times 10^{10}$  & $1.62\times 10^{10}$\\   
+      \midrule \midrule
+      \multicolumn{6}{l}{\emph{Clustered (pair) standard-errors in parentheses}}\\
+      \multicolumn{6}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+   
+   \par \raggedright 
+   Each column uses a different lag for the instrument. SE clustered by pair.
+\end{table}
+
+

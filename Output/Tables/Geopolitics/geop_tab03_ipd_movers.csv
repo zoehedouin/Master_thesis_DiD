@@ -1,0 +1,21 @@
+Direction,Pair,IPD 2010,IPD 2024,Delta,NATO 2024
+Top 10 divergences (Delta > 0),BDI - FJI,0.174,1.891,1.717,non
+Top 10 divergences (Delta > 0),NRU - USA,0.116,1.693,1.577,inter
+Top 10 divergences (Delta > 0),BDI - LBR,0.023,1.575,1.552,non
+Top 10 divergences (Delta > 0),FJI - RUS,0.019,1.568,1.549,non
+Top 10 divergences (Delta > 0),ERI - FJI,0.598,2.027,1.429,non
+Top 10 divergences (Delta > 0),ISR - NRU,0.053,1.478,1.425,non
+Top 10 divergences (Delta > 0),BDI - PNG,0.167,1.529,1.362,non
+Top 10 divergences (Delta > 0),BDI - PRY,0.126,1.486,1.359,non
+Top 10 divergences (Delta > 0),BDI - UKR,1.021,2.375,1.354,non
+Top 10 divergences (Delta > 0),ERI - PRY,0.298,1.622,1.324,non
+Top 10 rapprochements (Delta < 0),MMR - NRU,3.72,0.377,-3.343,non
+Top 10 rapprochements (Delta < 0),NRU - PRK,4.272,1.361,-2.911,non
+Top 10 rapprochements (Delta < 0),MMR - PLW,3.386,0.538,-2.848,non
+Top 10 rapprochements (Delta < 0),IRN - NRU,4.332,1.615,-2.717,non
+Top 10 rapprochements (Delta < 0),NRU - QAT,3.24,0.617,-2.622,non
+Top 10 rapprochements (Delta < 0),NRU - PRY,2.622,0.092,-2.53,non
+Top 10 rapprochements (Delta < 0),LBR - NRU,2.519,0.003,-2.516,non
+Top 10 rapprochements (Delta < 0),EGY - NRU,3.589,1.092,-2.497,non
+Top 10 rapprochements (Delta < 0),NRU - SUR,2.905,0.449,-2.456,non
+Top 10 rapprochements (Delta < 0),NRU - VNM,3.501,1.053,-2.448,non

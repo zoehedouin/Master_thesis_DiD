@@ -1,0 +1,46 @@
+
+\begin{table}[htbp]
+   \caption{Time-Varying IPD Effect: PPML vs CF-IV}
+   \centering
+   \begin{tabular}{lcc}
+      \tabularnewline \midrule \midrule
+      Dependent Variable: & \multicolumn{2}{c}{trade\_value}\\
+                          & PPML                  & CF-IV \\   
+      Model:              & (1)                   & (2)\\  
+      \midrule
+      \emph{Variables}\\
+      IPD x 1995-2007     & 0.0584$^{***}$        & 0.1649$^{***}$\\   
+                          & (0.0213)              & (0.0402)\\   
+      IPD x 2008-2013     & 0.0186                & 0.1300$^{***}$\\   
+                          & (0.0202)              & (0.0398)\\   
+      IPD x 2014-2017     & -0.0214               & 0.0899$^{**}$\\   
+                          & (0.0186)              & (0.0385)\\   
+      IPD x 2018-2021     & -0.0670$^{***}$       & 0.0441\\   
+                          & (0.0214)              & (0.0404)\\   
+      IPD x 2022-2024     & -0.0523$^{**}$        & 0.0521\\   
+                          & (0.0222)              & (0.0396)\\   
+      RTA                 & 0.0817$^{***}$        & 0.0876$^{***}$\\   
+                          & (0.0209)              & (0.0209)\\   
+      CF residual         &                       & -0.1372$^{***}$\\   
+                          &                       & (0.0322)\\   
+      \midrule
+      \emph{Fixed-effects}\\
+      exp\_year           & Yes                   & Yes\\  
+      imp\_year           & Yes                   & Yes\\  
+      pair                & Yes                   & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations        & 864,035               & 864,035\\  
+      Squared Correlation & 0.98637               & 0.98642\\  
+      Pseudo R$^2$        & 0.98727               & 0.98727\\  
+      BIC                 & $1.74\times 10^{10}$  & $1.74\times 10^{10}$\\   
+      \midrule \midrule
+      \multicolumn{3}{l}{\emph{Clustered (pair) standard-errors in parentheses}}\\
+      \multicolumn{3}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+   
+   \par \raggedright 
+   Both columns on the same IV sample (df\_iv2). CF-IV with 2-year lagged instrument.
+\end{table}
+
+

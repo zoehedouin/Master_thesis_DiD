@@ -1,0 +1,3 @@
+measure,type,coef,se,p,n,tier,signe_attendu,control,collin
+ideol_dist,ipd_apparie,-0.0579112919187456,0.0321990003795757,0.0720909753839492,254358,cas_negatif,neg (sample biaise),"",""
+ideol_dist,mesure_alt,-0.00102000934105539,0.00307047453337663,0.73973880908301,254358,cas_negatif,neg (sample biaise),"",""

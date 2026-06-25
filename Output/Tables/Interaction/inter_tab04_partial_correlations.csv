@@ -1,0 +1,5 @@
+Specification,Correlation,N
+Raw (pooled),0.112,"696,295"
+"Conditional on log(dist), log(GDP exp), log(GDP imp)",-0.0141,"696,295"
+Within-pair (demeaned by pair),-0.0655,"696,295"
+"Within-pair-year (exporter-year, importer-year, pair FE)",-4e-04,"696,295"

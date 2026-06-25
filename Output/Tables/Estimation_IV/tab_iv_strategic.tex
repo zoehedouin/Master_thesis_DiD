@@ -1,0 +1,38 @@
+
+\begin{table}[htbp]
+   \caption{CF-IV: Total vs Strategic vs Non-Strategic Trade}
+   \centering
+   \begin{tabular}{lccc}
+      \tabularnewline \midrule \midrule
+      Dependent Variables: & trade\_value          & strategic\_trade\_value   & non\_strategic\_trade\\    
+                           & Total                 & Strategic                 & Non-Strategic \\   
+      Model:               & (1)                   & (2)                       & (3)\\  
+      \midrule
+      \emph{Variables}\\
+      IPD                  & 0.1244$^{***}$        & 0.3127$^{**}$             & 0.1113$^{***}$\\   
+                           & (0.0391)              & (0.1300)                  & (0.0387)\\   
+      CF residual          & -0.1434$^{***}$       & -0.2531$^{**}$            & -0.1377$^{***}$\\   
+                           & (0.0333)              & (0.1184)                  & (0.0333)\\   
+      RTA                  & 0.0815$^{***}$        & 0.1379$^{***}$            & 0.0727$^{***}$\\   
+                           & (0.0205)              & (0.0508)                  & (0.0213)\\   
+      \midrule
+      \emph{Fixed-effects}\\
+      exp\_year            & Yes                   & Yes                       & Yes\\  
+      imp\_year            & Yes                   & Yes                       & Yes\\  
+      pair                 & Yes                   & Yes                       & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations         & 864,035               & 649,444                   & 863,331\\  
+      Squared Correlation  & 0.98633               & 0.93189                   & 0.98606\\  
+      Pseudo R$^2$         & 0.98720               & 0.96553                   & 0.98690\\  
+      BIC                  & $1.75\times 10^{10}$  & -2,147,483,648.5          & $1.7\times 10^{10}$\\   
+      \midrule \midrule
+      \multicolumn{4}{l}{\emph{Clustered (pair) standard-errors in parentheses}}\\
+      \multicolumn{4}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+   
+   \par \raggedright 
+   CF-IV with 2-year lagged instrument. SE clustered by pair.
+\end{table}
+
+

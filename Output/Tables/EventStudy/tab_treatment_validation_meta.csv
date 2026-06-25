@@ -1,0 +1,8 @@
+metric,value
+n_pairs_treated,7260
+n_pairs_never_treated,19305
+n_pairs_left_censored_onset_min_year,2707
+n_RUS_treated_partners,75
+year_min,1995
+year_max,2024
+caveat_NA,sanction_nontrade NA en 2024 (annee entiere) ; treated_post derive de l'onset reste valide

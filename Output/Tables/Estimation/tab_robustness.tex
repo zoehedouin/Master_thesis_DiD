@@ -1,0 +1,35 @@
+
+\begin{table}[htbp]
+   \caption{Robustness Checks}
+   \centering
+   \begin{tabular}{lccccc}
+      \tabularnewline \midrule \midrule
+      Dependent Variable: & \multicolumn{5}{c}{trade\_value}\\
+                          & Baseline              & IPD$^2$               & No micro              & Post-2002             & Excl. US/CN/RU \\   
+      Model:              & (1)                   & (2)                   & (3)                   & (4)                   & (5)\\  
+      \midrule
+      \emph{Variables}\\
+      IPD                 & -0.0663$^{**}$        & -0.1379$^{***}$       & -0.0677$^{**}$        & -0.1229$^{***}$       & 0.0283\\   
+                          & (0.0318)              & (0.0403)              & (0.0321)              & (0.0372)              & (0.0177)\\   
+      RTA                 & 0.1141$^{***}$        & 0.1126$^{***}$        & 0.1121$^{***}$        & 0.1193$^{***}$        & 0.0738$^{***}$\\   
+                          & (0.0235)              & (0.0236)              & (0.0238)              & (0.0237)              & (0.0206)\\   
+      IPD$^2$             &                       & 0.0288$^{***}$        &                       &                       &   \\   
+                          &                       & (0.0092)              &                       &                       &   \\   
+      \midrule
+      \emph{Fixed-effects}\\
+      exp\_year           & Yes                   & Yes                   & Yes                   & Yes                   & Yes\\  
+      imp\_year           & Yes                   & Yes                   & Yes                   & Yes                   & Yes\\  
+      pair                & Yes                   & Yes                   & Yes                   & Yes                   & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations        & 965,872               & 965,872               & 645,311               & 768,142               & 932,992\\  
+      Squared Correlation & 0.98343               & 0.98323               & 0.98345               & 0.98369               & 0.98611\\  
+      Pseudo R$^2$        & 0.99024               & 0.99025               & 0.98973               & 0.99064               & 0.98703\\  
+      BIC                 & $2.65\times 10^{10}$  & $2.64\times 10^{10}$  & $2.48\times 10^{10}$  & $2.26\times 10^{10}$  & $1.84\times 10^{10}$\\   
+      \midrule \midrule
+      \multicolumn{6}{l}{\emph{Clustered (pair) standard-errors in parentheses}}\\
+      \multicolumn{6}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+\end{table}
+
+

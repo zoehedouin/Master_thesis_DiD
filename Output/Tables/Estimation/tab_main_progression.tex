@@ -1,0 +1,53 @@
+
+\begin{table}[htbp]
+   \caption{Gravity Model: From OLS to Three-Way FE PPML}
+   \centering
+   \begin{tabular}{lccccc}
+      \tabularnewline \midrule \midrule
+      Dependent Variables: & log\_trade & \multicolumn{4}{c}{trade\_value}\\
+                          & OLS            & PPML\\Sep. FE         & PPML\\Ctry-Yr         & PPML\\3-Way FE        & PPML\\3-Way MW \\     
+      Model:              & (1)            & (2)                   & (3)                   & (4)                   & (5)\\  
+                          &  OLS           & Poisson               & Poisson               & Poisson               & Poisson\\  
+      \midrule
+      \emph{Variables}\\
+      Constant            & -34.89$^{***}$ &                       &                       &                       &   \\   
+                          & (0.2354)       &                       &                       &                       &   \\   
+      IPD                 & -0.0302$^{**}$ & 0.0352                & 0.0512                & -0.0663$^{**}$        & -0.0663$^{*}$\\   
+                          & (0.0143)       & (0.0297)              & (0.0324)              & (0.0318)              & (0.0401)\\   
+      log(Distance)       & -1.202$^{***}$ & -0.6601$^{***}$       & -0.6610$^{***}$       &                       &   \\   
+                          & (0.0153)       & (0.0292)              & (0.0292)              &                       &   \\   
+      Contiguity          & 0.9857$^{***}$ & 0.5271$^{***}$        & 0.5104$^{***}$        &                       &   \\   
+                          & (0.0801)       & (0.0707)              & (0.0707)              &                       &   \\   
+      Common Language     & 0.8367$^{***}$ & 0.0705                & 0.0787                &                       &   \\   
+                          & (0.0326)       & (0.0613)              & (0.0608)              &                       &   \\   
+      Colonial Tie        & 1.147$^{***}$  & 0.4500$^{***}$        & 0.4328$^{***}$        &                       &   \\   
+                          & (0.0940)       & (0.1564)              & (0.1514)              &                       &   \\   
+      log(GDP exp.)       & 1.201$^{***}$  & 0.8674$^{***}$        &                       &                       &   \\   
+                          & (0.0048)       & (0.0690)              &                       &                       &   \\   
+      log(GDP imp.)       & 0.9320$^{***}$ & 0.8914$^{***}$        &                       &                       &   \\   
+                          & (0.0049)       & (0.0612)              &                       &                       &   \\   
+      RTA                 & 0.4358$^{***}$ & 0.2852$^{***}$        & 0.3241$^{***}$        & 0.1141$^{***}$        & 0.1141$^{***}$\\   
+                          & (0.0224)       & (0.0476)              & (0.0505)              & (0.0235)              & (0.0249)\\   
+      \midrule
+      \emph{Fixed-effects}\\
+      exp\_iso3           &                & Yes                   &                       &                       & \\  
+      imp\_iso3           &                & Yes                   &                       &                       & \\  
+      year                &                & Yes                   &                       &                       & \\  
+      exp\_year           &                &                       & Yes                   & Yes                   & Yes\\  
+      imp\_year           &                &                       & Yes                   & Yes                   & Yes\\  
+      pair                &                &                       &                       & Yes                   & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations        & 696,295        & 989,296               & 1,019,488             & 965,872               & 965,872\\  
+      Squared Correlation & 0.66267        & 0.83927               & 0.86387               & 0.98343               & 0.98343\\  
+      Pseudo R$^2$        & 0.19328        & 0.93280               & 0.93924               & 0.99024               & 0.99024\\  
+      BIC                 & 3,158,347.8    & $1.83\times 10^{11}$  & $1.67\times 10^{11}$  & $2.65\times 10^{10}$  & $2.65\times 10^{10}$\\   
+      \midrule \midrule
+      \multicolumn{6}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+   
+   \par \raggedright 
+   Cluster-robust SE in parentheses (clustered by pair). Spec 5 uses multiway clustering (pair + exp-year + imp-year).
+\end{table}
+
+

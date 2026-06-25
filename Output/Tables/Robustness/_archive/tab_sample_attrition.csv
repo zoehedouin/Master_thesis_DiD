@@ -1,0 +1,8 @@
+mesure,pct_du_panel,n_obs,annee_min,annee_max,n_annees,couv_pays_pct,couv_dyad_theo,perte_temps_pct,perte_inwin_pct
+polyarchy_dist,56.2,896492,1995,2024,30,75.3,56.7,0,100
+ideol_dist,16.1,257404,1995,2023,29,56.7,32.2,4,96
+polity_dist,36.6,583296,1995,2018,24,70.1,49.2,31.5,68.5
+allied_atop,80,1275120,1995,2018,24,100,100,100,0
+shared_rival_mid,66.7,1062600,1995,2014,20,100,100,100,0
+sanction_nontrade,96.7,1540770,1995,2023,29,100,100,100,0
+n_common_sanctioners,96.7,1540770,1995,2023,29,100,100,100,0

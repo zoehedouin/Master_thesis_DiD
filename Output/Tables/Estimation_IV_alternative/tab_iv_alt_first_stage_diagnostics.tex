@@ -1,0 +1,16 @@
+\begin{table}[!h]
+\centering
+\caption{\label{tab:tab:iv_alt_fs}First-stage diagnostics: alternative IV families}
+\centering
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
+\begin{tabular}[t]{llrrrrrrr}
+\toprule
+family & label & N & n\_inst & KP\_rk\_F & Effective\_F & Wald\_joint\_F & Hansen\_J & Hansen\_p\\
+\midrule
+institutional & institutional (V-Dem + DPI) & 228354 & 3 & 60.35 & 4.64 & 60.35 & 12.61 & 0.00\\
+strategic\_relations & strategic\_relations (ATOP + MID) & 674276 & 3 & 274.59 & 359.62 & 274.59 & 90.96 & 0.00\\
+combined & combined (institutional + strategic) & 163322 & 6 & NA & 6.55 & 40.89 & 74.59 & 0.00\\
+Polity robustness & institutional Polity (Polity5 + DPI) & 164922 & 2 & 73.20 & 3.61 & 73.20 & 0.09 & 0.77\\
+\bottomrule
+\end{tabular}}
+\end{table}

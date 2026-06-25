@@ -1,0 +1,38 @@
+
+\begin{table}[htbp]
+   \caption{CF-IV Robustness: Alternative Instruments}
+   \centering
+   \begin{tabular}{lccc}
+      \tabularnewline \midrule \midrule
+      Dependent Variable: & \multicolumn{3}{c}{trade\_value}\\
+                          & Euclidean L2          & 3 Separate IVs        & Pre-sample 1995 \\   
+      Model:              & (1)                   & (2)                   & (3)\\  
+      \midrule
+      \emph{Variables}\\
+      IPD                 & 0.1244$^{***}$        & 0.1545$^{***}$        & -1.245$^{***}$\\   
+                          & (0.0391)              & (0.0402)              & (0.3603)\\   
+      CF residual         & -0.1434$^{***}$       & -0.1749$^{***}$       & 1.264$^{***}$\\   
+                          & (0.0333)              & (0.0359)              & (0.3612)\\   
+      RTA                 & 0.0815$^{***}$        & 0.0828$^{***}$        &   \\   
+                          & (0.0205)              & (0.0205)              &   \\   
+      \midrule
+      \emph{Fixed-effects}\\
+      exp\_year           & Yes                   & Yes                   & Yes\\  
+      imp\_year           & Yes                   & Yes                   & Yes\\  
+      pair                & Yes                   & Yes                   & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations        & 864,035               & 864,035               & 770,746\\  
+      Squared Correlation & 0.98633               & 0.98633               & 0.98774\\  
+      Pseudo R$^2$        & 0.98720               & 0.98720               & 0.98759\\  
+      BIC                 & $1.75\times 10^{10}$  & $1.75\times 10^{10}$  & $1.57\times 10^{10}$\\   
+      \midrule \midrule
+      \multicolumn{4}{l}{\emph{Clustered (pair) standard-errors in parentheses}}\\
+      \multicolumn{4}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+   
+   \par \raggedright 
+   SE clustered by pair. Pairs involving USA, China, Russia excluded.
+\end{table}
+
+

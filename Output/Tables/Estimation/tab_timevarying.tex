@@ -1,0 +1,40 @@
+
+\begin{table}[htbp]
+   \caption{Time-Varying IPD Effect}
+   \centering
+   \begin{tabular}{lc}
+      \tabularnewline \midrule \midrule
+      Dependent Variable: & trade\_value\\   
+      Model:              & (1)\\  
+      \midrule
+      \emph{Variables}\\
+      IPD x 1995-2007     & 0.0017\\   
+                          & (0.0255)\\   
+      IPD x 2008-2013     & -0.0405$^{*}$\\   
+                          & (0.0240)\\   
+      IPD x 2014-2017     & -0.0943$^{***}$\\   
+                          & (0.0243)\\   
+      IPD x 2018-2021     & -0.1440$^{***}$\\   
+                          & (0.0268)\\   
+      IPD x 2022-2024     & -0.2124$^{***}$\\   
+                          & (0.0368)\\   
+      RTA                 & 0.1207$^{***}$\\   
+                          & (0.0228)\\   
+      \midrule
+      \emph{Fixed-effects}\\
+      exp\_year           & Yes\\  
+      imp\_year           & Yes\\  
+      pair                & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations        & 965,872\\  
+      Squared Correlation & 0.98646\\  
+      Pseudo R$^2$        & 0.99049\\  
+      BIC                 & $2.58\times 10^{10}$\\   
+      \midrule \midrule
+      \multicolumn{2}{l}{\emph{Clustered (pair) standard-errors in parentheses}}\\
+      \multicolumn{2}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+\end{table}
+
+

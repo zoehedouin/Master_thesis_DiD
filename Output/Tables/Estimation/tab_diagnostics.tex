@@ -1,0 +1,23 @@
+\begin{table}
+\centering
+\caption{\label{tab:tab:diagnostics}Summary of all estimated specifications}
+\centering
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
+\begin{tabular}[t]{lrrrrr}
+\toprule
+spec & N & ipd\_coef & ipd\_se & ipd\_p & pseudo\_r2\\
+\midrule
+1\_OLS & 696295 & -0.0302 & 0.0143 & 0.0351 & 0.1933\\
+2\_PPML\_sep & 989296 & 0.0352 & 0.0297 & 0.2359 & 0.9328\\
+3\_PPML\_ctry\_yr & 1019488 & 0.0513 & 0.0324 & 0.1134 & 0.9392\\
+4\_PPML\_3way & 965872 & -0.0663 & 0.0318 & 0.0372 & 0.9902\\
+5\_PPML\_3way\_MW & 965872 & -0.0663 & 0.0401 & 0.0979 & 0.9902\\
+\addlinespace
+6\_Strategic & 733288 & -0.0126 & 0.0440 & 0.7752 & 0.9761\\
+7\_NonStrategic & 965118 & -0.0728 & 0.0323 & 0.0240 & 0.9900\\
+8\_x\_NATO & 965872 & NA & NA & NA & 0.9902\\
+9\_x\_NATO\_strat & 733288 & NA & NA & NA & 0.9761\\
+10\_TimeVar & 965872 & NA & NA & NA & 0.9905\\
+\bottomrule
+\end{tabular}}
+\end{table}

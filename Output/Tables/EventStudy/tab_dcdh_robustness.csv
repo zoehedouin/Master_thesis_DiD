@@ -1,0 +1,15 @@
+model,term,rel,estimate,se,lb,ub
+senders_ge20,Placebo_1   ,-1,0.02857,0.0182,-0.00711,0.06424
+senders_ge20,Placebo_2   ,-2,-0.01455,0.02236,-0.05838,0.02927
+senders_ge20,Effect_1    ,1,-0.05956,0.01716,-0.0932,-0.02592
+senders_ge20,Effect_2    ,2,-0.07664,0.01971,-0.11528,-0.03801
+senders_ge20,Effect_3    ,3,-0.12985,0.02309,-0.1751,-0.0846
+senders_ge20,Effect_4    ,4,-0.17055,0.02467,-0.2189,-0.1222
+senders_ge20,ATE,,-0.11709,0.01904,-0.1544,-0.07978
+core_continuous,Placebo_1   ,-1,-0.0047,0.03076,-0.06499,0.05559
+core_continuous,Placebo_2   ,-2,-0.02787,0.03573,-0.09789,0.04216
+core_continuous,Effect_1    ,1,-0.04256,0.0303,-0.10195,0.01682
+core_continuous,Effect_2    ,2,0.0062,0.03277,-0.05803,0.07044
+core_continuous,Effect_3    ,3,-0.14719,0.03894,-0.22352,-0.07086
+core_continuous,Effect_4    ,4,-0.13169,0.0436,-0.21715,-0.04624
+core_continuous,ATE,,-0.06563,0.02632,-0.11721,-0.01405

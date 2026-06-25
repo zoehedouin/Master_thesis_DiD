@@ -1,0 +1,7 @@
+palier,description,year_min,year_max,n_sample,n_estim,variable,control,coef,se,p,collin
+B,5 measures sans shared_rival (binding ATOP),1995,2018,563942,534884,ipd,"",0.0409547037600093,0.0155746693616698,0.00854925989221451,""
+B,5 measures sans shared_rival (binding ATOP),1995,2018,563942,534884,polyarchy_dist,"",0.0339935254834603,0.059535931082113,0.568016621004382,""
+B,5 measures sans shared_rival (binding ATOP),1995,2018,563942,534884,polity_dist,"",0.00515808894008236,0.00202336109455778,0.0107949423583179,""
+B,5 measures sans shared_rival (binding ATOP),1995,2018,563942,534884,allied_atop,"",0.0213916770581432,0.0255560220912419,0.40256427082335,""
+B,5 measures sans shared_rival (binding ATOP),1995,2018,563942,534884,sanction_nontrade,"",-0.0238724814239245,0.0193196828108853,0.21658647010861,""
+B,5 measures sans shared_rival (binding ATOP),1995,2018,563942,534884,n_common_sanctioners,"",0.0300202342738495,0.0140712548198782,0.0328883202534544,""
