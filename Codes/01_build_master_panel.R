@@ -250,8 +250,9 @@ rm(ipd_rev); gc(verbose = FALSE)
 # ---- Section 4bis : RTA from DESTA -----------------------------------------
 #
 # DESTA (Design of Trade Agreements) liste les traites commerciaux dyadiques.
-# On garde les traites de base (base_treaty == 1) pour eviter le double-
-# comptage avec les amendements. On construit une indicatrice 0/1 par
+# On garde entry_type in {"base_treaty", "accession"} (cf. filtre ci-dessous)
+# pour eviter le double-comptage avec les versions "consolidated". On construit
+# une indicatrice 0/1 par
 # (exp, imp, year) = 1 si au moins un traite est en vigueur a cette annee
 # (entryforceyear <= year). Pas d'info de termination dans le fichier list-
 # of-treaties : hypothese implicite = traite en vigueur reste en vigueur.

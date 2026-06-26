@@ -1,5 +1,8 @@
 # Documentation des mesures alternatives de distance géopolitique
 
+> *Réorg `reorg-did` : `06_build_geopol_measures.R` → `Codes/03_build_treatments.R` ;
+> `04_gravity_estimation.R` → `Codes/08_ppml.R`. Carte : `README_pipeline.md`.*
+
 Ce document décrit, pour chaque variable construite dans
 `06_build_geopol_measures.R` et écrite dans `Data/Clean/iv_panel.parquet`,
 ce qu'elle mesure, ses sources, sa formule, sa construction dyadique,

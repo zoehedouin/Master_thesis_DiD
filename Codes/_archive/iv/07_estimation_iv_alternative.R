@@ -2,7 +2,7 @@
 # 07_estimation_iv_alternative.R  (PARTIE 1 : FIRST STAGES + DIAGNOSTICS)
 # -----------------------------------------------------------------------------
 # Control function PPML avec instruments des deux familles "institutional" et
-# "strategic_relations" (cf 06_build_iv_alternative.R).
+# "strategic_relations" (cf 03_build_treatments.R, ex-06_build_geopol_measures.R).
 #
 # Cette execution s'arrete apres les premiers stages : on remonte les
 # diagnostics (KP rk Wald F, effective F Montiel-Pflueger, Hansen J, signes)

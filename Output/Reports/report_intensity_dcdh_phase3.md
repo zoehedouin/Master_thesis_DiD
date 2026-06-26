@@ -1,5 +1,9 @@
 # Rapport — Dose d'intensité des sanctions + Phase 3 (dCDH)
 
+> *Réorg `reorg-did` : `06_build_geopol_measures.R` → `Codes/03_build_treatments.R` ;
+> `11_intensity_dcdh.R` + `11b_dcdh_outputs.R` → `Codes/09_dcdh.R`. Carte :
+> `README_pipeline.md`.*
+
 *Date : 2026-06-24. Scripts : `06_build_geopol_measures.R` (enrichi),
 `11_intensity_dcdh.R`, `11b_dcdh_outputs.R`. Données : `iv_panel.parquet`
 (régénéré), GSDB v4 brut. Chiffres exacts, sans interprétation.*
