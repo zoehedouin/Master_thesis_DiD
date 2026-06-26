@@ -178,3 +178,23 @@ script et ses sorties. Tout via `git mv` — rien supprimé.
 - Racine git/analytique = `Master_thesis_DiD/` (inchangé). `Data/` reste hors dépôt.
 - `01`–`05` sont des **dossiers** de partie (défaut demandé) ne contenant que le
   script ; leurs sorties (panels) restent dans `Data/Clean/` (central).
+
+---
+
+# Réorg #3 — variables actives DiD (modifs scripts 01 / 02 / 03)
+
+Modifications de contenu (pas de déplacement). Logique d'analyse inchangée ;
+seuls des ajouts de variables + un flag d'isolation.
+
+- **01** : ajout appartenance UE — table `eu_members` hardcodée (calendrier
+  1958→2013 ; RU jusqu'à `GBR_exit_year=2020`), dérive `exp_eu`/`imp_eu`/`pair_eu`
+  (miroir NATO). README master mis à jour (auto-généré).
+- **02** : (a) `non_strategic_trade` (+ `non_strategic_share`) = complément du
+  stratégique ; (b) `exp/imp_energy_dep_rus` = part hydrocarbures russes (BACI
+  HS27, exportateur RUS) dans les imports totaux du pays (cache
+  `_baci_energy_cache.parquet` ; code RUS lu du crosswalk). README_strategic MAJ.
+- **03** : (a) niveau `exp/imp_polyarchy` (V-Dem `v2x_polyarchy`) toujours produit
+  (covariable de régime active) ; (b) flag `BUILD_LEGACY_IV` (défaut FALSE) isole
+  les familles IV (distances V-Dem/DPI/Polity + ATOP/MID) et saute leurs lectures.
+  Repro « 0 diff » des 4 colonnes sanctions intacte (hors flag).
+- **Docs** : `Reports/VARIABLES.md` (section variables actives + note flag IV).

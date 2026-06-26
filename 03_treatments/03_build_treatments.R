@@ -80,6 +80,17 @@ PATH_PANEL <- PATH_STRATEGIC  # frame de reference = master_panel_with_strategic
 
 log_step("Setup termine.")
 
+# --- Flag : construire (ou non) les familles "LEGACY IV" -------------------
+# FALSE (defaut) : iv_panel.parquet ne contient QUE les traitements actifs du
+#   DiD (sanctions sous toutes leurs formes + n_common_sanctioners) et la
+#   covariable de regime exp/imp_polyarchy (NIVEAU). Les lectures DPI / Polity5 /
+#   ATOP / dyadic MID sont SAUTEES (moins de dependances, run plus rapide).
+# TRUE : reproduit en plus les colonnes de distance IV historiques
+#   (polyarchy_dist, joint_dem_vdem, ideol_dist, polity_dist, allied_atop,
+#   shared_ally_atop, mid_direct, shared_rival_mid). La repro "0 diff" des 4
+#   colonnes sanctions est intacte dans les deux cas (elles sont hors flag).
+BUILD_LEGACY_IV <- FALSE
+
 
 # ---- Section 1 : ISO3 du panel master (frame de reference) ------------------
 
@@ -117,10 +128,11 @@ name_to_iso3 <- function(nm) {
 }
 
 
-# --- Familles V-Dem / DPI / Polity / ATOP / MID : V-Dem (polyarchy_dist) est
-# --- conservee comme covariable de regime ; le RESTE est [LEGACY IV] (instruments
-# --- abandonnes, consommateurs archives). Code laisse intact pour reproduire les
-# --- colonnes historiques ; non utilise par le pipeline DiD actif.
+# --- V-Dem est TOUJOURS lue : elle fournit la covariable de regime active
+# --- exp/imp_polyarchy (NIVEAU, Section 8). Les familles DPI / Polity / ATOP /
+# --- MID et les DISTANCES IV (polyarchy_dist, etc.) sont [LEGACY IV] : code
+# --- laisse intact mais conditionne a BUILD_LEGACY_IV (Sections 3-7 sautees,
+# --- merges Section 8 sautes quand le flag est FALSE).
 # ---- Section 2 : V-Dem v16 (institutional) ----------------------------------
 
 log_step("Section 2 : V-Dem.")
@@ -145,6 +157,8 @@ cat("  - V-Dem obs filtrees    :", nrow(vdem),
 
 
 # ---- Section 3 : DPI 2023 (institutional - ideologie executif) -------------
+# === [LEGACY IV] Lectures DPI / Polity5 / ATOP / MID — sautees si flag FALSE ===
+if (BUILD_LEGACY_IV) {
 
 log_step("Section 3 : DPI execrlc.")
 tic()
@@ -298,6 +312,8 @@ rivals_of <- unique(rbind(
   mid_expanded[, .(focal = iso_b, rival = iso_a, year)]
 ))
 cat("  - Rivals (focal, rival, year) dedoublonnes :", nrow(rivals_of), "\n")
+
+}  # === fin if (BUILD_LEGACY_IV) : lectures DPI / Polity5 / ATOP / MID ===
 
 
 # ---- Section 6bis : GSDB v4 - sanctions ------------------------------------
@@ -497,6 +513,8 @@ gc(verbose = FALSE)
 #
 # On itere annee par annee pour gerer la complexite de la jointure
 # "shared third party". L'espace des paires est borne par master_iso3.
+# === [LEGACY IV] tiers communs (shared_ally_atop / shared_rival_mid) ===
+if (BUILD_LEGACY_IV) {
 
 log_step("Section 7 : agregation dyadique.")
 
@@ -531,6 +549,8 @@ shared_ally <- compute_shared(allies_und2, "shared_ally_atop")
 rivals_of2 <- rivals_of[, .(focal, partner = rival, year)]
 shared_rival <- compute_shared(rivals_of2, "shared_rival_mid")
 
+}  # === fin if (BUILD_LEGACY_IV) : tiers communs ===
+
 
 # ---- Section 8 : Panel par paire-annee --------------------------------------
 
@@ -547,14 +567,23 @@ cat("  - Squelette pairs-years (master_panel) :", nrow(panel_pairs), "\n")
 iv_panel <- copy(panel_pairs)
 rm(panel, panel_pairs); gc(verbose = FALSE)
 
-# Merger V-Dem (exp puis imp)
+# Merger V-Dem (exp puis imp). Le NIVEAU exp/imp_polyarchy est la covariable de
+# regime ACTIVE du DiD (toujours produite). Les DISTANCES (polyarchy_dist,
+# joint_dem_vdem) sont [LEGACY IV] -> conditionnees au flag.
 vdem_exp <- vdem[, .(iso_a = iso3, year, vdem_a = v2x_polyarchy)]
 vdem_imp <- vdem[, .(iso_b = iso3, year, vdem_b = v2x_polyarchy)]
 iv_panel <- merge(iv_panel, vdem_exp, by = c("iso_a", "year"), all.x = TRUE)
 iv_panel <- merge(iv_panel, vdem_imp, by = c("iso_b", "year"), all.x = TRUE)
-iv_panel[, polyarchy_dist := abs(vdem_a - vdem_b)]
-iv_panel[, joint_dem_vdem := pmin(vdem_a, vdem_b)]
+iv_panel[, exp_polyarchy := vdem_a]   # niveau v2x_polyarchy [0,1], cote exporter
+iv_panel[, imp_polyarchy := vdem_b]   # niveau v2x_polyarchy [0,1], cote importer
+if (BUILD_LEGACY_IV) {
+  iv_panel[, polyarchy_dist := abs(vdem_a - vdem_b)]
+  iv_panel[, joint_dem_vdem := pmin(vdem_a, vdem_b)]
+}
 iv_panel[, c("vdem_a", "vdem_b") := NULL]
+
+# === [LEGACY IV] merges distances/relations (DPI / Polity / ATOP / MID) ======
+if (BUILD_LEGACY_IV) {
 
 # DPI execrlc
 dpi_exp <- dpi[, .(iso_a = iso3, year, dpi_a = execrlc)]
@@ -602,6 +631,8 @@ iv_panel <- merge(iv_panel, shared_rival,
 iv_panel[is.na(shared_rival_mid) & year <= 2014L, shared_rival_mid := 0L]
 iv_panel[year > 2014L, shared_rival_mid := NA_integer_]
 
+}  # === fin if (BUILD_LEGACY_IV) : merges DPI / Polity / ATOP / MID ===
+
 # Sanctions undirected (any/trade/nontrade)
 iv_panel <- merge(iv_panel, sanc_und,
                   by = c("iso_a", "iso_b", "year"), all.x = TRUE)
@@ -646,10 +677,13 @@ cat("Annees                              :",
     min(iv_panel$year), "-", max(iv_panel$year), "\n\n")
 
 cat("Couverture par variable (non-NA en % du panel) :\n")
-for (v in c("polyarchy_dist", "joint_dem_vdem", "ideol_dist", "polity_dist",
-            "allied_atop", "shared_ally_atop", "mid_direct", "shared_rival_mid",
-            "sanction_any", "sanction_trade", "sanction_nontrade",
-            "n_common_sanctioners")) {
+cov_vars <- c("exp_polyarchy", "imp_polyarchy",
+              "sanction_any", "sanction_trade", "sanction_nontrade",
+              "n_common_sanctioners")
+if (BUILD_LEGACY_IV) cov_vars <- c("polyarchy_dist", "joint_dem_vdem",
+            "ideol_dist", "polity_dist", "allied_atop", "shared_ally_atop",
+            "mid_direct", "shared_rival_mid", cov_vars)
+for (v in cov_vars) {
   pct <- 100 * mean(!is.na(iv_panel[[v]]))
   cat(sprintf("  %-22s : %.1f%%\n", v, pct))
 }
@@ -669,13 +703,20 @@ cat(sprintf("  n_common_sanctioners > 0 : %d (%.2f%%, max = %d)\n",
             100 * mean(snc$n_common_sanctioners > 0),
             max(snc$n_common_sanctioners, na.rm = TRUE)))
 
-cat("\nDistribution par famille :\n")
-cat("  institutional (V-Dem + DPI joint non-NA)   :",
-    iv_panel[!is.na(polyarchy_dist) & !is.na(ideol_dist), .N], "\n")
-cat("  strategic_relations (ATOP + MID joint)     :",
-    iv_panel[!is.na(allied_atop) & !is.na(shared_rival_mid), .N], "\n")
-cat("  Polity (separate, robustness)              :",
-    iv_panel[!is.na(polity_dist), .N], "\n")
+cat("\nNiveau polyarchy (covariable de regime active) :\n")
+cat(sprintf("  exp_polyarchy non-NA : %.1f%%  | imp_polyarchy non-NA : %.1f%%\n",
+            100 * mean(!is.na(iv_panel$exp_polyarchy)),
+            100 * mean(!is.na(iv_panel$imp_polyarchy))))
+
+if (BUILD_LEGACY_IV) {
+  cat("\nDistribution par famille [LEGACY IV] :\n")
+  cat("  institutional (V-Dem + DPI joint non-NA)   :",
+      iv_panel[!is.na(polyarchy_dist) & !is.na(ideol_dist), .N], "\n")
+  cat("  strategic_relations (ATOP + MID joint)     :",
+      iv_panel[!is.na(allied_atop) & !is.na(shared_rival_mid), .N], "\n")
+  cat("  Polity (separate, robustness)              :",
+      iv_panel[!is.na(polity_dist), .N], "\n")
+}
 
 
 # ---- Section 10 : Sauvegarde -----------------------------------------------

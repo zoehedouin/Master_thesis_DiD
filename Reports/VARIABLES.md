@@ -394,3 +394,56 @@ l'une ni l'autre.
   combinées, et précisions trop faibles pour distinguer un effet
   IV non-nul de zéro. Le résultat principal du mémoire reste le
   **PPML 3-way FE** (Spec 4 du script `04_gravity_estimation.R`).
+
+---
+
+## Mise à jour — variables actives DiD (réorg #3, modifs scripts 01/02/03)
+
+> Ces 4 ajouts servent le design DiD (sanctions/votes ONU). Ils ne sont PAS des
+> instruments. Sources : `01_build_master_panel.R`, `02_build_strategic_panel.R`,
+> `03_build_treatments.R`.
+
+### `exp_eu` / `imp_eu` / `pair_eu` (script 01)
+- **Mesure** : appartenance à la CEE/UE (0/1 par pays-année), mergée des deux
+  côtés ; `pair_eu ∈ {intra, inter, non}` (2 / 1 / 0 membres dans la paire).
+  Miroir exact de `exp_nato`/`imp_nato`/`pair_nato`.
+- **Construction** : table d'adhésion hardcodée (calendrier 1958→2013) ; le
+  Royaume-Uni est membre **jusqu'à `GBR_exit_year = 2020` inclus** (paramétrable
+  en tête de 01). Règle : `eu = 1` si `year ≥ eu_join_year ET (NA(exit) | year ≤ exit)`.
+- **Usage** : descriptif de balance du sorting (sanctionneurs ≈ UE/OTAN), **pas**
+  une covariable de conditionnement (colinéaire au traitement, absorbé par les FE).
+
+### `non_strategic_trade` / `non_strategic_share` (script 02)
+- **Mesure** : `trade_value − strategic_trade_value` (milliers USD, ≥ 0 ;
+  = `trade_value` quand le strategique est nul). Complément du commerce
+  stratégique, pour la décomposition (feuille de route §5).
+- **`non_strategic_share`** : `non_strategic_trade / trade_value`, NA si total 0
+  (même convention que `strategic_trade_share`).
+
+### `exp_energy_dep_rus` / `imp_energy_dep_rus` (script 02)
+- **Mesure** : dépendance énergétique russe (monadique, mergée des deux côtés).
+  Part des hydrocarbures russes (BACI **HS chapitre 27**, exportateur = RUS) dans
+  les **importations totales** du pays cette année-là. Dans `[0,1]`, NA si
+  importations totales nulles. C'est **LA** covariable de conditionnement qui
+  varie dans le temps (non absorbée par les FE paire — feuille de route §2).
+- **Construction** : numérateur dérivé de BACI (code RUS lu depuis le crosswalk,
+  ISO num 643 ; cache `_baci_energy_cache.parquet`) ; dénominateur = imports du
+  master panel. Variante « part du commerce total » mentionnée dans le code,
+  non activée par défaut.
+
+### `exp_polyarchy` / `imp_polyarchy` (script 03)
+- **Mesure** : **niveau** V-Dem `v2x_polyarchy` (`[0,1]`), mergé des deux côtés.
+  Covariable de **régime politique** active du DiD (feuille de route, covariables).
+- À distinguer de `polyarchy_dist` (distance, désormais [LEGACY IV], cf. ci-dessous).
+
+### Note — isolation du bloc « LEGACY IV » (script 03)
+- `03_build_treatments.R` expose un flag **`BUILD_LEGACY_IV` (défaut `FALSE`)**.
+  Quand FALSE, `iv_panel.parquet` ne contient **que** les traitements actifs
+  (toutes les variables `sanction_*` / `sanc_*` / `n_common_sanctioners`) **et**
+  le niveau `exp/imp_polyarchy`. Les lectures DPI / Polity5 / ATOP / dyadic MID
+  sont **sautées**, et les colonnes de **distance** IV (`polyarchy_dist`,
+  `joint_dem_vdem`, `ideol_dist`, `polity_dist`, `allied_atop`, `shared_ally_atop`,
+  `mid_direct`, `shared_rival_mid`) ne sont **pas** produites.
+- Passer le flag à `TRUE` reproduit les colonnes IV historiques décrites plus
+  haut. La repro « 0 diff » des 4 colonnes sanctions est intacte dans les deux
+  cas (elles sont hors flag).

@@ -32,6 +32,11 @@ stopifnot(dir.exists(PATH_RAW), dir.exists(PATH_BACI),
 
 log_step("Setup termine. Periode cible : 1995-2024.")
 
+# Parametre : annee de sortie de l'UE du Royaume-Uni. Le RU est membre JUSQU'EN
+# 2020 inclus (fin de la periode de transition du Brexit) ; basculer a 2019 si
+# l'on veut compter l'annee de retrait formel (31 jan. 2020) autrement.
+GBR_exit_year <- 2020L
+
 
 # ---- Section 1 : Crosswalk pays --------------------------------------------
 
@@ -366,6 +371,48 @@ cat("  - Membres en", YEAR_MAX, "             :",
     nato_members[nato_join_year <= YEAR_MAX, .N], "\n")
 
 
+# ---- Section 4quater : EU membership ---------------------------------------
+#
+# Adhesion CEE/UE hardcodee (ISO3 + annee d'adhesion). Meme mecanique que NATO.
+# Un pays est membre a partir de eu_join_year (incluse). Cas particulier : le
+# Royaume-Uni quitte l'UE (eu_exit_year = GBR_exit_year, parametre en tete).
+# Regle d'indicatrice (Section 6) : eu = 1 si year >= eu_join_year ET
+# (is.na(eu_exit_year) | year <= eu_exit_year). Derive exp_eu, imp_eu, pair_eu.
+
+log_step("Section 4quater : EU membership.")
+
+eu_members <- data.table(
+  iso3 = c(
+    "BEL", "FRA", "DEU", "ITA", "LUX", "NLD",                       # 1958
+    "DNK", "IRL", "GBR",                                            # 1973
+    "GRC",                                                          # 1981
+    "ESP", "PRT",                                                   # 1986
+    "AUT", "FIN", "SWE",                                            # 1995
+    "CYP", "CZE", "EST", "HUN", "LVA", "LTU", "MLT", "POL", "SVK", "SVN",  # 2004
+    "BGR", "ROU",                                                   # 2007
+    "HRV"                                                           # 2013
+  ),
+  eu_join_year = c(
+    rep(1958L, 6),
+    rep(1973L, 3),
+    1981L,
+    rep(1986L, 2),
+    rep(1995L, 3),
+    rep(2004L, 10),
+    rep(2007L, 2),
+    2013L
+  )
+)
+# Sortie : seul le RU a une annee de sortie (parametree en tete).
+eu_members[, eu_exit_year := NA_integer_]
+eu_members[iso3 == "GBR", eu_exit_year := GBR_exit_year]
+
+cat("  - Membres UE definis          :", nrow(eu_members), "\n")
+cat("  - Membres en 1995             :",
+    eu_members[eu_join_year <= 1995L &
+               (is.na(eu_exit_year) | 1995L <= eu_exit_year), .N], "\n")
+
+
 # ---- Section 5 : World Bank via WDI -----------------------------------------
 
 log_step("Section 5 : telechargement WDI (peut prendre 30-60s).")
@@ -438,6 +485,42 @@ cat(sprintf("  - NATO : exp_nato==1 : %d  imp_nato==1 : %d  intra : %d\n",
             panel[exp_nato == 1L, .N], panel[imp_nato == 1L, .N],
             panel[pair_nato == "intra", .N]))
 
+# 6.1quater EU : merge cote exp et cote imp, derivation pair_eu (avec sortie RU)
+panel <- merge(panel, eu_members[, .(iso3, eu_join_exp = eu_join_year,
+                                     eu_exit_exp = eu_exit_year)],
+               by.x = "exp_iso3", by.y = "iso3", all.x = TRUE)
+panel <- merge(panel, eu_members[, .(iso3, eu_join_imp = eu_join_year,
+                                     eu_exit_imp = eu_exit_year)],
+               by.x = "imp_iso3", by.y = "iso3", all.x = TRUE)
+panel[, exp_eu := as.integer(!is.na(eu_join_exp) & year >= eu_join_exp &
+                             (is.na(eu_exit_exp) | year <= eu_exit_exp))]
+panel[, imp_eu := as.integer(!is.na(eu_join_imp) & year >= eu_join_imp &
+                             (is.na(eu_exit_imp) | year <= eu_exit_imp))]
+panel[, pair_eu := fcase(
+  exp_eu == 1L & imp_eu == 1L, "intra",
+  exp_eu + imp_eu == 1L,       "inter",
+  exp_eu == 0L & imp_eu == 0L, "non"
+)]
+panel[, c("eu_join_exp", "eu_exit_exp", "eu_join_imp", "eu_exit_imp") := NULL]
+cat(sprintf("  - EU : exp_eu==1 : %d  imp_eu==1 : %d  intra : %d\n",
+            panel[exp_eu == 1L, .N], panel[imp_eu == 1L, .N],
+            panel[pair_eu == "intra", .N]))
+# Validation : nb de membres UE par annee (attendu 2003->15, 2004->25,
+# 2007->27, 2013->28, 2021->27 apres Brexit).
+eu_count <- panel[, .(n_eu = uniqueN(exp_iso3[exp_eu == 1L])), by = year][order(year)]
+cat("  - Membres UE par annee (checkpoints) : ")
+for (yy in c(2003L, 2004L, 2007L, 2013L, 2021L)) {
+  nn <- eu_count[year == yy, n_eu]
+  if (length(nn)) cat(sprintf("%d=%d ", yy, nn))
+}
+cat("\n")
+cat(sprintf("  - Check FRA/DEU exp_eu==1 toutes annees : %s\n",
+            all(panel[exp_iso3 %in% c("FRA", "DEU"), exp_eu] == 1L)))
+cat(sprintf("  - Check HRV exp_eu==1 ssi year>=2013    : %s\n",
+            panel[exp_iso3 == "HRV", all((exp_eu == 1L) == (year >= 2013L))]))
+cat(sprintf("  - Check GBR exp_eu==1 ssi year<=%d     : %s\n", GBR_exit_year,
+            panel[exp_iso3 == "GBR", all((exp_eu == 1L) == (year <= GBR_exit_year))]))
+
 # 6.2 Gravity time-invariant : merge dyadique (exp, imp)
 panel <- merge(panel, grav_inv, by = c("exp_iso3", "imp_iso3"),
                all.x = TRUE)
@@ -473,6 +556,7 @@ setcolorder(panel, c(
   "ipd",
   "rta",
   "exp_nato", "imp_nato", "pair_nato",
+  "exp_eu", "imp_eu", "pair_eu",
   "dist", "distw_harm", "dist_cap", "contig",
   "comlang_off", "comlang_eth",
   "colony", "comcol", "comrelig",
@@ -564,7 +648,7 @@ readme_txt <- c(
   "- BACI HS92 V202601 (CEPII) : commerce bilateral HS6, agrege par paire-annee",
   "- Gravity V202211 (CEPII)   : variables structurelles time-invariant uniquement",
   "- IPD 1946-2025 (Bailey-Strezhnev-Voeten) : distance ideologique UNGA (AbsIdealDiff)",
-  "- DESTA list-of-treaties    : RTA dyadique (base_treaty == 1, en vigueur)",
+  "- DESTA list-of-treaties    : RTA dyadique (entry_type in {base_treaty, accession}, en vigueur)",
   "- World Bank WDI            : GDP nominal/reel, inflation, deflateur, population",
   "",
   "## Format",
@@ -591,6 +675,9 @@ readme_txt <- c(
   "- rta                      : 1 si >=1 traite DESTA base en vigueur a year",
   "- exp_nato, imp_nato       : 1 si pays membre NATO en year (hardcode)",
   "- pair_nato                : 'intra' (2 NATO), 'inter' (1 NATO), 'non' (0)",
+  "- exp_eu, imp_eu           : 1 si pays membre CEE/UE en year (hardcode ;",
+  "                             RU membre jusqu'a GBR_exit_year = 2020 inclus)",
+  "- pair_eu                  : 'intra' (2 UE), 'inter' (1 UE), 'non' (0)",
   "- dist, distw_harm, dist_cap : distances geographiques (km)",
   "- contig                   : frontiere commune (0/1)",
   "- comlang_off, comlang_eth : langue officielle / ethnique commune",

@@ -154,6 +154,12 @@ iso3_map <- baci_codes[!is.na(iso3) & iso3 != "N/A" & nchar(iso3) == 3,
                        .(country_code, iso3)]
 cat("  - Pays avec ISO3 valide :", nrow(iso3_map), "\n")
 
+# Code numerique BACI de la Russie (ISO num 643) recupere DEPUIS le crosswalk
+# (pas code en dur a l'aveugle). Sert au numerateur de la dependance energetique.
+RUS_code <- iso3_map[iso3 == "RUS", country_code]
+stopifnot(length(RUS_code) == 1L)
+cat("  - Code BACI Russie       :", RUS_code, "\n")
+
 
 # ---- Section 3 : Lecture filtree BACI sur codes strategiques ----------------
 
@@ -176,6 +182,7 @@ if (file.exists(strat_cache)) {
   baci_files <- baci_files[order(baci_files)]
 
   strat_list <- vector("list", length(baci_files))
+  energy_list <- vector("list", length(baci_files))  # [ENERGIE] RUS HS27 par (t,j)
   codes_seen <- character(0)
 
   for (i in seq_along(baci_files)) {
@@ -199,6 +206,12 @@ if (file.exists(strat_cache)) {
     agg <- dt_s[, .(strategic_trade_value = sum(v, na.rm = TRUE)),
                 by = .(t, i, j)]
     strat_list[[i]] <- agg
+
+    # [ENERGIE] flux dont l'exportateur est la Russie ET le HS6 commence par "27"
+    # (combustibles mineraux), agreges par importateur j. Numerateur de la
+    # dependance energetique russe (cf. Section 3bis + Section 5).
+    energy_list[[i]] <- dt[dt[["i"]] == RUS_code & substr(k_str, 1, 2) == "27",
+                           .(rus_hs27_value = sum(v, na.rm = TRUE)), by = .(t, j)]
 
     cat(sprintf("    [%d/%d] %d : %d obs HS6 -> %d obs strategiques -> %d paires (%d codes vus)\n",
                 i, length(baci_files), yr,
@@ -241,6 +254,64 @@ cat("  - Paires-annees strategiques  :", nrow(strat), "\n")
 cat("  - Annees couvertes            :", min(strat$year), "-", max(strat$year), "\n")
 cat("  - Pays exporteurs uniques     :", uniqueN(strat$exp_iso3), "\n")
 cat("  - Pays importateurs uniques   :", uniqueN(strat$imp_iso3), "\n")
+
+
+# ---- Section 3bis : numerateur dependance energetique russe (RUS HS27) -------
+#
+# Numerateur = somme des flux BACI dont l'exportateur est la Russie ET le HS6
+# commence par "27" (combustibles mineraux), agrege par (importateur, annee).
+# Cache propre _baci_energy_cache.parquet (mirroir du cache strategique).
+
+log_step("Section 3bis : dependance energetique russe (numerateur RUS HS27).")
+
+energy_cache <- file.path(PATH_CLEAN, "_baci_energy_cache.parquet")
+
+# Agrege une liste de morceaux (t, j, rus_hs27_value) -> (imp_iso3, year, value)
+build_energy_num <- function(en_list) {
+  en <- rbindlist(en_list)
+  en <- en[, .(rus_hs27_value = sum(rus_hs27_value, na.rm = TRUE)), by = .(t, j)]
+  setnames(en, c("t", "j"), c("year", "imp_code"))
+  en <- merge(en, iso3_map, by.x = "imp_code", by.y = "country_code", all.x = TRUE)
+  setnames(en, "iso3", "imp_iso3")
+  en <- en[!is.na(imp_iso3),
+           .(rus_hs27_value = sum(rus_hs27_value, na.rm = TRUE)),
+           by = .(imp_iso3, year)]
+  setkey(en, imp_iso3, year)
+  en[]
+}
+
+if (file.exists(energy_cache)) {
+  log_step(paste("  Cache energie trouve, lecture :", energy_cache))
+  energy_num <- as.data.table(read_parquet(energy_cache))
+} else if (exists("energy_list")) {
+  # La passe BACI strategique vient de tourner : on reutilise energy_list.
+  energy_num <- build_energy_num(energy_list)
+  write_parquet(energy_num, energy_cache)
+  cat("  - Cache energie ecrit :", energy_cache, "\n")
+  rm(energy_list); gc(verbose = FALSE)
+} else {
+  # Strategic recharge depuis cache -> passe BACI dediee legere filtree sur RUS.
+  log_step("  (cache strategique present) passe BACI dediee RUS HS27.")
+  baci_files2 <- list.files(PATH_BACI,
+                            pattern = "^BACI_HS92_Y[0-9]+_V202601\\.csv$",
+                            full.names = TRUE)
+  en_list2 <- vector("list", length(baci_files2))
+  for (fi in seq_along(baci_files2)) {
+    dt <- fread(baci_files2[fi], select = c("t", "i", "j", "k", "v"),
+                colClasses = c(t = "integer", i = "integer", j = "integer",
+                               k = "integer", v = "numeric"))
+    dt[, k_str := sprintf("%06d", k)]
+    en_list2[[fi]] <- dt[dt[["i"]] == RUS_code & substr(k_str, 1, 2) == "27",
+                         .(rus_hs27_value = sum(v, na.rm = TRUE)), by = .(t, j)]
+    rm(dt); gc(verbose = FALSE)
+  }
+  energy_num <- build_energy_num(en_list2)
+  write_parquet(energy_num, energy_cache)
+  cat("  - Cache energie ecrit :", energy_cache, "\n")
+}
+cat("  - Numerateur energie (imp_iso3, year > 0) :", nrow(energy_num), "\n")
+cat("  - Annees couvertes                        :",
+    min(energy_num$year), "-", max(energy_num$year), "\n")
 
 
 # ---- Section 4 : Diagnostic codes strategiques manquants --------------------
@@ -292,8 +363,51 @@ panel[, strategic_trade_share := strategic_trade_value / trade_value]
 panel[!is.finite(strategic_trade_share), strategic_trade_share := NA_real_]
 panel[trade_value == 0, strategic_trade_share := NA_real_]
 
+# non_strategic_trade : complement du strategique (>= 0 ; = trade_value si
+# strategic == 0). pmax(.,0) absorbe le bruit flottant (strategic est un
+# sous-ensemble du total, donc <= trade_value a l'arrondi pres).
+panel[, non_strategic_trade := pmax(trade_value - strategic_trade_value, 0)]
+# non_strategic_share : meme convention que strategic_trade_share (NA si total 0)
+panel[, non_strategic_share := non_strategic_trade / trade_value]
+panel[!is.finite(non_strategic_share), non_strategic_share := NA_real_]
+panel[trade_value == 0, non_strategic_share := NA_real_]
+
+# Dependance energetique russe (monadique, mergee sur les DEUX cotes).
+# Denominateur = importations TOTALES du pays (concept de dependance cote
+# import) = somme de trade_value par (imp_iso3, year) du master panel.
+# Variante "part du commerce total" (imports + exports) : remplacer tot_imp par
+# une somme bilaterale des deux sens ; NON activee par defaut.
+tot_imp <- panel[, .(tot_imp = sum(trade_value, na.rm = TRUE)),
+                 by = .(imp_iso3, year)]
+energy_dep <- merge(tot_imp, energy_num, by = c("imp_iso3", "year"), all.x = TRUE)
+energy_dep[is.na(rus_hs27_value), rus_hs27_value := 0]
+# NA si denominateur == 0 (eviter 0/0) ; sinon part dans [0, 1].
+energy_dep[, energy_dep_rus := fifelse(tot_imp > 0,
+                                       rus_hs27_value / tot_imp, NA_real_)]
+energy_dep <- energy_dep[, .(iso3 = imp_iso3, year, energy_dep_rus)]
+panel <- merge(panel,
+               energy_dep[, .(exp_iso3 = iso3, year,
+                              exp_energy_dep_rus = energy_dep_rus)],
+               by = c("exp_iso3", "year"), all.x = TRUE)
+panel <- merge(panel,
+               energy_dep[, .(imp_iso3 = iso3, year,
+                              imp_energy_dep_rus = energy_dep_rus)],
+               by = c("imp_iso3", "year"), all.x = TRUE)
+
 # Verif : panel doit garder exactement les memes lignes
 stopifnot(nrow(panel) == n0)
+
+# Validation rapide (loggee)
+cat(sprintf("  - non_strategic_trade < 0                 : %d (attendu 0)\n",
+            panel[non_strategic_trade < 0, .N]))
+cat(sprintf("  - |non_strat + strat - total| > 1e-3      : %d (attendu ~0)\n",
+            panel[abs(non_strategic_trade + strategic_trade_value -
+                      trade_value) > 1e-3, .N]))
+cat(sprintf("  - energy_dep_rus (imp) hors [0,1] non-NA  : %d (attendu 0)\n",
+            panel[!is.na(imp_energy_dep_rus) &
+                  (imp_energy_dep_rus < 0 | imp_energy_dep_rus > 1), .N]))
+cat(sprintf("  - imp_energy_dep_rus non-NA               : %.1f%%\n",
+            100 * mean(!is.na(panel$imp_energy_dep_rus))))
 
 
 # ---- Section 6 : Diagnostics finaux -----------------------------------------
@@ -340,7 +454,9 @@ print(top_pairs[, .(exp_iso3, imp_iso3,
 log_step("Section 7 : sauvegarde.")
 
 setcolorder(panel, c("exp_iso3", "imp_iso3", "year",
-                     "trade_value", "strategic_trade_value", "strategic_trade_share"))
+                     "trade_value", "strategic_trade_value", "strategic_trade_share",
+                     "non_strategic_trade", "non_strategic_share",
+                     "exp_energy_dep_rus", "imp_energy_dep_rus"))
 setkey(panel, exp_iso3, imp_iso3, year)
 
 out_parquet <- file.path(PATH_CLEAN, "master_panel_with_strategic.parquet")
@@ -366,6 +482,17 @@ readme_txt <- c(
   "  strategiques (en milliers USD). 0 si pas de match (legitime, pas NA).",
   "- strategic_trade_share : strategic_trade_value / trade_value. NA si",
   "  trade_value == 0 (division 0/0 non definie).",
+  "- non_strategic_trade   : trade_value - strategic_trade_value (milliers USD,",
+  "  >= 0 ; = trade_value quand strategic == 0). Complement du strategique.",
+  "- non_strategic_share   : non_strategic_trade / trade_value. NA si",
+  "  trade_value == 0 (meme convention que strategic_trade_share).",
+  "- exp/imp_energy_dep_rus : dependance energetique russe (monadique, mergee",
+  "  des deux cotes). Part des hydrocarbures russes (BACI HS chapitre 27,",
+  "  exportateur = RUS) dans les importations TOTALES du pays cette annee-la.",
+  "  Dans [0,1] ; NA si importations totales == 0. Numerateur derive de BACI",
+  "  (cache _baci_energy_cache.parquet) ; denominateur = imports du master panel.",
+  "  Variante 'part du commerce total' (imports+exports) mentionnee dans le code,",
+  "  non activee par defaut.",
   "",
   "## Codes HS6 strategiques",
   paste0("- Total uniques : ", n_after, " codes apres dedoublonnage"),
