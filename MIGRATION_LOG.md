@@ -111,3 +111,70 @@ Conservés à la racine de `Reports/` (cœur DiD) : `VARIABLES.md`,
   `ipd_robustness/`, noté dans `Codes/_archive/README.md`.
 
 \* `Data/Clean/README.md` est hors du dépôt git (modif sur disque uniquement).
+
+---
+
+# Réorg #2 — passage à une structure « par partie »
+
+Branche `reorg-by-part` (depuis `reorg-did`). Principe : **co-localiser les
+sorties de section, centraliser données + synthèse**. La couche `Codes/` et la
+couche `Output/` disparaissent ; un dossier `NN_nom/` par partie contient son
+script et ses sorties. Tout via `git mv` — rien supprimé.
+
+## A. Mécanique des chemins (`00_setup.R`)
+- Détection `PROJECT_ROOT` (via `Output/`) remplacée par `ANALYSIS_ROOT` (via
+  `.git`/`00_setup.R`). `DATA_ROOT` (via `Data/Clean/`) inchangé. `PATH_OUT` retiré.
+- Helpers `out_tab()/out_fig()/out_map()` redéfinis : routent vers
+  `ANALYSIS_ROOT/<PART>/{tables,figures,maps}` (argument-thème ignoré, gardé pour
+  compat → **aucun site d'appel modifié**). `out_rep()` → `Reports/` central.
+- Chaque script `06`–`11` : ajout de `PART <- "NN_nom"`. Les 12 scripts : le
+  `source("00_setup.R")` nu est remplacé par un **bootstrap** qui remonte jusqu'au
+  dossier de `00_setup.R` (robuste sous `Rscript` et `source()`).
+
+## B. Déplacements de scripts (Codes/ → dossiers de partie, racine)
+`00_setup.R`, `01_build_master_panel.R`→`01_master_panel/`,
+`02…`→`02_strategic_panel/`, `03…`→`03_treatments/`, `04…`→`04_un_votes/`,
+`05…`→`05_covariates/`, `06…`→`06_descriptives/`, `07…`→`07_validity/`,
+`08…`→`08_ppml/`, `09…`→`09_dcdh/`, `10…`→`10_decomposition/`,
+`11…`→`11_robustness/`. `Codes/` supprimé (vide). `Codes/_archive/` → `_archive/`.
+
+## C. Déplacements de sorties (Output/ → dossiers de partie)
+- `Output/{Figures,Tables}/{Trade,Geopolitics,Interaction}` + `Output/Maps/*`
+  → `06_descriptives/{figures,tables,maps}/`.
+- `Output/{Figures,Tables}/Estimation` → `08_ppml/{figures,tables}/`.
+- **`Output/.../EventStudy` scindé par producteur** :
+  `es_fig01_sunab`, `tab_eventstudy_sunab`, `tab_static_did`,
+  `tab_treatment_validation(+_meta)` → `08_ppml/` ;
+  `es_fig02_dcdh_tiers`, `tab_dcdh_by_tier`, `tab_dcdh_robustness`,
+  `tab_russia_cases_by_type` → `09_dcdh/`.
+
+## D. Archives consolidées sous `_archive/` (racine)
+- `Output/_archive/{Figures,Tables}` → `_archive/output_legacy/{Figures,Tables}`.
+- **Déviation assumée** : `Output/Tables/Robustness` (paliers/grilles IPD,
+  `report_estimations.md`, `report_robustness.md`) — **legacy** (aucun script
+  actif ne les produit ; ex-`09_estimations_robustesse_completes.R`) → archivé en
+  `_archive/output_legacy/Tables/Robustness_ipd/` plutôt que dans le nouveau
+  `11_robustness/` (qui aurait recréé la confusion script↔sortie).
+- `Output/` supprimé (vide).
+
+## E. Rapports
+- `Output/Reports/` → `Reports/` (racine). Restent centraux : `README_pipeline.md`,
+  `VARIABLES.md`, `report_sanctions_synthese.md`, `annexe_ipd_iv.md`, `_archive/`.
+- Rapports de phase → rapports de partie : `report_eventstudy_phase1.md` →
+  `08_ppml/08_report.md` ; `report_intensity_dcdh_phase3.md` → `09_dcdh/09_report.md`
+  (bannières/liens internes mis à jour).
+- **Stubs** créés : `06_descriptives/06_report.md`, `07_validity/07_report.md`,
+  `10_decomposition/10_report.md`, `11_robustness/11_report.md`.
+
+## F. Renvois mis à jour
+- En-têtes/TODO des squelettes `07`/`10`/`11` : `Output/{Tables,Figures}/<theme>`
+  → `NN_partie/{tables,figures}`. `09_dcdh.R` & `06_descriptives.R` : commentaires
+  `Codes/`/`Output/` actualisés.
+- Rapports centraux (`README_pipeline.md`, `VARIABLES.md`, `annexe_ipd_iv.md`,
+  `report_sanctions_synthese.md`) : chemins `Codes/`/`Output/` → structure par partie.
+- `.gitignore` : ajout `*.Rhistory` ; 2 `.Rhistory` traqués par erreur untrackés.
+
+## G. Choix techniques documentés
+- Racine git/analytique = `Master_thesis_DiD/` (inchangé). `Data/` reste hors dépôt.
+- `01`–`05` sont des **dossiers** de partie (défaut demandé) ne contenant que le
+  script ; leurs sorties (panels) restent dans `Data/Clean/` (central).

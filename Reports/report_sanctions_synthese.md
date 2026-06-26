@@ -1,8 +1,9 @@
 # Synthèse — Event study des sanctions sur le commerce bilatéral
 
-> *Réorg `reorg-did` : `06_build_geopol_measures.R` → `Codes/03_build_treatments.R` ;
-> `10_event_study_sanctions.R` → `Codes/08_ppml.R` ; `11*_…` → `Codes/09_dcdh.R`.
-> Carte du pipeline à jour : `README_pipeline.md`.*
+> *Synthèse transversale 08+09 (reste **centrale** dans `Reports/`). Structure par
+> partie (réorg #2) : `03_treatments/03_build_treatments.R`, `08_ppml/08_ppml.R`,
+> `09_dcdh/09_dcdh.R` ; sorties co-localisées dans `08_ppml/` et `09_dcdh/`. Carte
+> du pipeline : [`README_pipeline.md`](README_pipeline.md).*
 
 *Date : 2026-06-25. Objet : effet causal des sanctions (choc géopolitique) sur le
 commerce bilatéral, cadre gravité PPML. Données : `iv_panel.parquet` (enrichi),
@@ -174,21 +175,21 @@ cluster = paire ; fenêtre 2008-2023 ; `effects = 4`, `placebo = 2`. Dose
 
 ## 7. Livrables
 
-**Scripts** (`Codes/`) : `06_build_geopol_measures.R` (enrichi ; sauvegarde
-`.bak_20260624`), `10_event_study_sanctions.R` (Phase 1), `11_intensity_dcdh.R` +
-`11b_dcdh_outputs.R` (dose agrégée), `11c_dcdh_by_tier.R` (par palier + figure),
-`11d_robustness.R` (robustesses).
+**Scripts** : traitement = `03_treatments/03_build_treatments.R` (ex-`06`, enrichi ;
+sauvegarde `.bak_20260624` dans `_archive/backups/`) ; PPML/event study =
+`08_ppml/08_ppml.R` (fusion ex-`04`+ex-`10`) ; intensité dCDH = `09_dcdh/09_dcdh.R`
+(fusion `11`+`11b`+`11c`+`11d`).
 
-**Figures** (`Output/Figures/EventStudy/`) :
-`es_fig01_sunab_2014.png`, `es_fig02_dcdh_tiers.png`.
+**Figures** : `08_ppml/figures/es_fig01_sunab_2014.png` ;
+`09_dcdh/figures/es_fig02_dcdh_tiers.png`.
 
-**Tables** (`Output/Tables/EventStudy/`) :
-`tab_treatment_validation.csv` (+ `_meta`), `tab_static_did.csv`,
-`tab_eventstudy_sunab.csv`, `tab_dcdh_by_tier.csv`, `tab_dcdh_robustness.csv`,
-`tab_russia_cases_by_type.csv`.
+**Tables** — `08_ppml/tables/` : `tab_treatment_validation.csv` (+ `_meta`),
+`tab_static_did.csv`, `tab_eventstudy_sunab.csv` ; `09_dcdh/tables/` :
+`tab_dcdh_by_tier.csv`, `tab_dcdh_robustness.csv`, `tab_russia_cases_by_type.csv`.
 
-**Rapports** (`Output/Reports/`) : `report_eventstudy_phase1.md`,
-`report_intensity_dcdh_phase3.md`, et la présente synthèse.
+**Rapports** : `08_ppml/08_report.md` (ex-`report_eventstudy_phase1.md`),
+`09_dcdh/09_report.md` (ex-`report_intensity_dcdh_phase3.md`), et la présente
+synthèse (`Reports/report_sanctions_synthese.md`).
 
 **Données** : `Data/Clean/iv_panel.parquet` (régénéré, 33 colonnes ;
 sauvegarde `iv_panel_backup_20260624.parquet`).

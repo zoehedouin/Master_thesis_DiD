@@ -1,14 +1,14 @@
 # Annexe documentée — l'IPD et l'IV (deux résultats réutilisables)
 
 > Annexe de transparence du mémoire. Elle **sauve hors du dépôt actif** deux
-> acquis de l'époque « IPD / IV » (scripts archivés sous `Codes/_archive/iv/` et
-> `Codes/_archive/ipd_robustness/`) qui restent utiles au texte final :
+> acquis de l'époque « IPD / IV » (scripts archivés sous `_archive/iv/` et
+> `_archive/ipd_robustness/`) qui restent utiles au texte final :
 > (1) l'IV comme **impasse assumée**, (2) l'**hétérogénéité temporelle de l'IPD**
 > comme **motivation** du focus Russie 2014→2022.
 >
 > Sources distillées (désormais dans `Reports/_archive/`) :
 > `2026-06-16_recap_analyse.md`, `2026-06-22_verifications_variables_robustesse.md`,
-> et `Output/_archive/Tables/Estimation_IV/iv_synthesis_report.md`.
+> et `_archive/output_legacy/Tables/Estimation_IV/iv_synthesis_report.md`.
 
 ---
 

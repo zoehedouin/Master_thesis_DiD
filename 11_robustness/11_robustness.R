@@ -17,7 +17,7 @@
 #   * INFERENCE : cluster paire NON ordonnee ; robustesse au three-way
 #     (exportateur, importateur, temps).
 #
-# Output : Output/Tables/Robustness/ , Output/Figures/Robustness/
+# Output : 11_robustness/tables/ , 11_robustness/figures/
 # Entrees : master_panel_with_strategic.parquet, iv_panel.parquet ; specs de 08/09.
 # Chemins / wrappers I/O / helpers : 00_setup.R.
 # =============================================================================
@@ -72,7 +72,7 @@ log_step(sprintf("panel : %d lignes.", nrow(df)))
 ## 3. TRIANGULATION PPML vs LOGS (table cote a cote) :
 ##    - Memes traitements, deux estimateurs : fepois (PPML, 08) vs feols sur
 ##      log(trade+1) (cadre dCDH, 09). Comparer SIGNES et ORDRES DE GRANDEUR.
-##    - Sortie : Output/Tables/Robustness/tab_triangulation_ppml_logs.{csv,tex}.
+##    - Sortie : 11_robustness/tables/tab_triangulation_ppml_logs.{csv,tex}.
 ##
 ## 4. HETEROGENEITE PAR SENDER :
 ##    - Interagir le traitement avec l'identite du sender (USA, CAN, JPN, GBR,

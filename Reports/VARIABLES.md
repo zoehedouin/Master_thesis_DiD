@@ -1,7 +1,8 @@
 # Documentation des mesures alternatives de distance géopolitique
 
-> *Réorg `reorg-did` : `06_build_geopol_measures.R` → `Codes/03_build_treatments.R` ;
-> `04_gravity_estimation.R` → `Codes/08_ppml.R`. Carte : `README_pipeline.md`.*
+> *Structure par partie (réorg #2) : traitement = `03_treatments/03_build_treatments.R`
+> (ex-`06_build_geopol_measures.R`) ; gravité = `08_ppml/08_ppml.R`
+> (ex-`04_gravity_estimation.R`). Carte : [`README_pipeline.md`](README_pipeline.md).*
 
 Ce document décrit, pour chaque variable construite dans
 `06_build_geopol_measures.R` et écrite dans `Data/Clean/iv_panel.parquet`,

@@ -1,16 +1,16 @@
-# `Codes/_archive/` — scripts retirés du pipeline actif
+# `_archive/` (code) — scripts retirés du pipeline actif
 
 Rien n'est supprimé : tout ce qui sort du pipeline est **déplacé** ici (règle de
-sécurité de la réorganisation `reorg-did`). Ces fichiers restent exécutables tels
-quels, mais ils ne font plus partie de la feuille de route DiD (sanctions vs votes
-ONU, centrée Russie). Voir `../../MIGRATION_LOG.md` pour la trace complète des
-déplacements et `../../Output/Reports/README_pipeline.md` pour la carte du
-pipeline actif.
+sécurité des réorganisations `reorg-did` puis `reorg-by-part`). Ces fichiers
+restent exécutables tels quels, mais ils ne font plus partie de la feuille de
+route DiD (sanctions vs votes ONU, centrée Russie). Voir `../MIGRATION_LOG.md`
+pour la trace complète des déplacements et `../Reports/README_pipeline.md` pour
+la carte du pipeline actif. (Sorties legacy : `output_legacy/`.)
 
 ## `iv/` — exploration IV abandonnée comme identification principale
 Tentative d'instrumenter la distance d'idéal-point (IPD) sur le commerce. Aucun
 instrument n'est simultanément fort, excluable et stable (synthèse :
-`../../Output/Reports/annexe_ipd_iv.md`). Abandonnée au profit du design DiD.
+`../Reports/annexe_ipd_iv.md`). Abandonnée au profit du design DiD.
 
 | Fichier | Rôle d'origine |
 |---|---|
@@ -36,7 +36,7 @@ temporelle de l'IPD : positif ≤2014, négatif post-2014) est reprise dans
 
 ## `legacy_descriptives/` — originaux fusionnés dans le nouveau `06_descriptives.R`
 Les trois scripts descriptifs d'origine. Leur contenu réutilisable (socle général
-+ blocs IPD/interaction) est fusionné et recentré Russie dans `../06_descriptives.R`.
++ blocs IPD/interaction) est fusionné et recentré Russie dans `../06_descriptives/06_descriptives.R`.
 Conservés ici comme référence du calcul d'origine.
 
 | Fichier | Rôle d'origine |
@@ -51,12 +51,12 @@ pipeline numérique d'origine (les fusions reprennent leur logique à l'identiqu
 
 | Fichier | Fusionné dans |
 |---|---|
-| `04_gravity_estimation.R` | `../08_ppml.R` (échine PPML statique + type + 2×2). |
-| `10_event_study_sanctions.R` | `../08_ppml.R` (event study Sun & Abraham). |
-| `11_intensity_dcdh.R` | `../09_dcdh.R` (AVSQ intensité en paliers). |
-| `11b_dcdh_outputs.R` | `../09_dcdh.R` (sorties/figures dCDH). |
-| `11c_dcdh_by_tier.R` | `../09_dcdh.R` (effets par palier). |
-| `11d_robustness.R` | `../09_dcdh.R` (robustesses dCDH). |
+| `04_gravity_estimation.R` | `../08_ppml/08_ppml.R` (échine PPML statique + type + 2×2). |
+| `10_event_study_sanctions.R` | `../08_ppml/08_ppml.R` (event study Sun & Abraham). |
+| `11_intensity_dcdh.R` | `../09_dcdh/09_dcdh.R` (AVSQ intensité en paliers). |
+| `11b_dcdh_outputs.R` | `../09_dcdh/09_dcdh.R` (sorties/figures dCDH). |
+| `11c_dcdh_by_tier.R` | `../09_dcdh/09_dcdh.R` (effets par palier). |
+| `11d_robustness.R` | `../09_dcdh/09_dcdh.R` (robustesses dCDH). |
 
 ## `backups/` — sauvegardes de fichiers
 | Fichier | Note |

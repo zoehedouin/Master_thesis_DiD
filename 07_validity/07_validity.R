@@ -12,7 +12,7 @@
 #   (iii) HonestDiD (Rambachan & Roth 2023) : borner la violation possible des
 #         tendances paralleles et montrer la survie de l'effet.
 #
-# Output : Output/Tables/Validity/ , Output/Figures/Validity/
+# Output : 07_validity/tables/ , 07_validity/figures/
 # Entrees : master_panel_with_strategic.parquet, iv_panel.parquet,
 #           covariates.parquet (cf. 05). Coefs d'event study repris de 08_ppml.R.
 # Chemins / wrappers I/O / helpers : 00_setup.R.
@@ -65,7 +65,7 @@ log_step(sprintf("panel : %d lignes.", nrow(df)))
 ##     - AFFICHER OTAN/UE dans la table de balance pour DOCUMENTER le sorting
 ##       (sanctionneurs ~ membres UE/OTAN), mais NE PAS s'en servir comme
 ##       covariable de conditionnement (bad control colineaire au traitement).
-##     - Sortie : Output/Tables/Validity/tab_balance_smd.{csv,tex}.
+##     - Sortie : 07_validity/tables/tab_balance_smd.{csv,tex}.
 ##
 ## (ii) PRE-TENDANCES (tendances paralleles) :
 ##     - Reprendre l'event study Sun & Abraham de 08_ppml.R ; lire les leads
@@ -73,7 +73,7 @@ log_step(sprintf("panel : %d lignes.", nrow(df)))
 ##       n°1, lu AVANT le signe de l'effet post-traitement.
 ##     - Tester l'anticipation (pas de reaction avant le choc : accumulation
 ##       militaire fin 2021 avant 2022).
-##     - Sortie : Output/Figures/Validity/fig_pretrends.png + table des leads.
+##     - Sortie : 07_validity/figures/fig_pretrends.png + table des leads.
 ##
 ## (iii) HonestDiD (Rambachan & Roth 2023) :
 ##     - A partir de l'objet event-study (fixest -> coefs + vcov), utiliser
@@ -81,8 +81,8 @@ log_step(sprintf("panel : %d lignes.", nrow(df)))
 ##       restriction "smoothness" Delta^SD) pour borner la violation et montrer
 ##       que l'effet survit tant que la tendance differentielle <= Mbar fois la
 ##       pre-tendance observee.
-##     - Sortie : Output/Figures/Validity/fig_honestdid_sensitivity.png +
-##       Output/Tables/Validity/tab_honestdid_bounds.csv.
+##     - Sortie : 07_validity/figures/fig_honestdid_sensitivity.png +
+##       07_validity/tables/tab_honestdid_bounds.csv.
 ##
 ## Packages : HonestDiD (install : install.packages("HonestDiD")), fixest,
 ##            ggplot2, data.table, arrow.

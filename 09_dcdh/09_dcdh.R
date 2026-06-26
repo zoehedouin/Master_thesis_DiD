@@ -63,7 +63,7 @@ SAMPLE_CONTROLS <- TRUE   # FALSE = run full sample on a bigger machine (no cont
 # les placebos, onset 2014, escalade 2022-2023). VERBATIM des scripts 11*.
 YR_MIN <- 2008L; YR_MAX <- 2023L; N_CTRL <- 4000L; EFF <- 4L; PLA <- 2L
 
-# Helper de sortie : reproduit les chemins legacy Output/Tables|Figures/EventStudy
+# Sorties co-localisees dans 09_dcdh/{tables,figures} (out_* routent par PART).
 PATH_TAB <- out_tab("EventStudy")
 PATH_FIG <- out_fig("EventStudy")
 

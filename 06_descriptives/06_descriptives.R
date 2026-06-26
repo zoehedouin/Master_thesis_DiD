@@ -3,7 +3,7 @@
 # -----------------------------------------------------------------------------
 # Script descriptif unifie du memoire (DiD sanctions / votes ONU, centre Russie).
 # Fusion FIDELE des trois anciens scripts descriptifs (desormais archives sous
-# Codes/_archive/legacy_descriptives/) : 03a_desc_trade.R, 03b_desc_geopolitics.R,
+# _archive/legacy_descriptives/) : 03a_desc_trade.R, 03b_desc_geopolitics.R,
 # 03c_desc_interaction.R. Aucune logique d'analyse ni aucun calcul numerique n'a
 # ete modifie ; seuls le bloc de setup (libraries, chemins, wrappers I/O) a ete
 # consolide via source("00_setup.R") et les chemins de sortie reecrits avec les

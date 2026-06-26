@@ -14,7 +14,7 @@
 # Contribution propre vs GSDB-R4 (qui declare ne pas pouvoir identifier les
 # secteurs touches par les sanctions commerciales partielles — possible ici via HS6).
 #
-# Output : Output/Tables/Decomposition/ , Output/Figures/Decomposition/
+# Output : 10_decomposition/tables/ , 10_decomposition/figures/
 # Entrees : master_panel_with_strategic.parquet (02), iv_panel.parquet (03).
 # Chemins / wrappers I/O / helpers : 00_setup.R.
 # =============================================================================
@@ -72,9 +72,9 @@ log_step(sprintf("panel strategique : %d lignes.", nrow(df)))
 ##    - Optionnel : isoler l'energie (HS27) du reste du strategique.
 ##
 ## 4. SORTIES (table cote a cote strategique vs non-strategique) :
-##    - Output/Tables/Decomposition/tab_decomp_eventstudy.{csv,tex}
-##    - Output/Tables/Decomposition/tab_decomp_avsq.csv
-##    - Output/Figures/Decomposition/fig_decomp_eventstudy.png
+##    - 10_decomposition/tables/tab_decomp_eventstudy.{csv,tex}
+##    - 10_decomposition/tables/tab_decomp_avsq.csv
+##    - 10_decomposition/figures/fig_decomp_eventstudy.png
 ##
 ## Packages : fixest, DIDmultiplegtDYN, ggplot2, data.table, arrow.
 ## NE RIEN INVENTER : squelette uniquement (re-utilise les specs validees de 08/09).
