@@ -1,7 +1,10 @@
 # Rapport — Phase 1 : event study Sun & Abraham (sanctions non-commerciales)
 
-> *Réorg `reorg-did` : `10_event_study_sanctions.R` est désormais fusionné dans
-> `Codes/08_ppml.R`. Carte du pipeline à jour : `README_pipeline.md`.*
+> *Rapport de la **partie 08_ppml** (produit par `08_ppml.R`, dans lequel
+> `10_event_study_sanctions.R` est fusionné). Sorties co-localisées dans
+> `figures/` et `tables/`. Synthèse transversale 08+09 :
+> [`../Reports/report_sanctions_synthese.md`](../Reports/report_sanctions_synthese.md) ;
+> carte du pipeline : [`../Reports/README_pipeline.md`](../Reports/README_pipeline.md).*
 
 *Scripts : `10_event_study_sanctions.R`. Données : `iv_panel.parquet`.
 Traitement = `sanction_nontrade` (GSDB-R4), pour éviter la tautologie de

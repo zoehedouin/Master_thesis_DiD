@@ -1,8 +1,11 @@
 # Rapport — Dose d'intensité des sanctions + Phase 3 (dCDH)
 
-> *Réorg `reorg-did` : `06_build_geopol_measures.R` → `Codes/03_build_treatments.R` ;
-> `11_intensity_dcdh.R` + `11b_dcdh_outputs.R` → `Codes/09_dcdh.R`. Carte :
-> `README_pipeline.md`.*
+> *Rapport de la **partie 09_dcdh** (produit par `09_dcdh.R`, fusion de
+> `11/11b/11c/11d`). Traitement construit en amont par
+> [`../03_treatments/03_build_treatments.R`](../03_treatments/03_build_treatments.R).
+> Sorties co-localisées dans `figures/` et `tables/`. Synthèse transversale :
+> [`../Reports/report_sanctions_synthese.md`](../Reports/report_sanctions_synthese.md) ;
+> carte : [`../Reports/README_pipeline.md`](../Reports/README_pipeline.md).*
 
 *Date : 2026-06-24. Scripts : `06_build_geopol_measures.R` (enrichi),
 `11_intensity_dcdh.R`, `11b_dcdh_outputs.R`. Données : `iv_panel.parquet`
