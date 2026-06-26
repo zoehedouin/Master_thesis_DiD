@@ -35,7 +35,8 @@ sous `Rscript` comme en `source()` interactif.
 | 00 | `00_setup.R` (racine) | **NEW** | — (socle) | (aucune ; sourcé partout) |
 | 01 | `01_master_panel/01_build_master_panel.R` | gardé | préalable (données) | `Data/Clean/master_panel.*` |
 | 02 | `02_strategic_panel/02_build_strategic_panel.R` | gardé | préalable (données) | `Data/Clean/master_panel_with_strategic.*` |
-| 03 | `03_treatments/03_build_treatments.R` | **reframe** (ex-`06`) | préalable (traitement) | `Data/Clean/iv_panel.parquet` |
+| 03 | `03_sanctions/03_build_sanctions.R` | **scindé** (sanctions pur) | préalable (traitement) | `Data/Clean/sanctions_panel.parquet` |
+| — | `_archive/iv_legacy/build_iv_panel.R` | **archivé** (hors pipeline) | legacy IV | `Data/Clean/_archive/iv_panel.parquet` |
 | 04 | `04_un_votes/04_build_un_votes.R` | **NEW (squelette)** | préliminaire (votes ONU) | `Data/Clean/un_votes.*` |
 | 05 | `05_covariates/05_build_covariates.R` | **NEW (squelette)** | préalable (covariables + 2×2) | `Data/Clean/covariates.*` |
 | 06 | `06_descriptives/06_descriptives.R` | **fusion** (`03a+03b+03c`) | §1 descriptives | `06_descriptives/{figures,tables,maps}/` |

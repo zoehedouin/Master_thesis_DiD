@@ -15,7 +15,7 @@
 # secteurs touches par les sanctions commerciales partielles — possible ici via HS6).
 #
 # Output : 10_decomposition/tables/ , 10_decomposition/figures/
-# Entrees : master_panel_with_strategic.parquet (02), iv_panel.parquet (03).
+# Entrees : master_panel_with_strategic.parquet (02), sanctions_panel.parquet (03).
 # Chemins / wrappers I/O / helpers : 00_setup.R.
 # =============================================================================
 

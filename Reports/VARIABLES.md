@@ -1,13 +1,19 @@
 # Documentation des mesures alternatives de distance géopolitique
 
-> *Structure par partie (réorg #2) : traitement = `03_treatments/03_build_treatments.R`
-> (ex-`06_build_geopol_measures.R`) ; gravité = `08_ppml/08_ppml.R`
-> (ex-`04_gravity_estimation.R`). Carte : [`README_pipeline.md`](README_pipeline.md).*
+> *Scission sanctions/IV (réorg #4) : le panel de traitement ACTIF est
+> `Data/Clean/sanctions_panel.parquet`, produit par `03_sanctions/03_build_sanctions.R`
+> (sanctions pur + niveaux `exp/imp_polyarchy`). Les **8 distances IV** documentées
+> ci-dessous (familles 1 et 2) ne sont plus dans le panel actif : elles sont
+> reconstruites par le script archivé `_archive/iv_legacy/build_iv_panel.R`
+> (→ `Data/Clean/_archive/iv_panel.parquet`), hors pipeline. Gravité/PPML =
+> `08_ppml/08_ppml.R`. Carte : [`README_pipeline.md`](README_pipeline.md).*
 
-Ce document décrit, pour chaque variable construite dans
-`06_build_geopol_measures.R` et écrite dans `Data/Clean/iv_panel.parquet`,
-ce qu'elle mesure, ses sources, sa formule, sa construction dyadique,
-et l'harmonisation des identifiants.
+Ce document décrit, pour chaque variable des familles « instruments alternatifs »,
+ce qu'elle mesure, ses sources, sa formule, sa construction dyadique, et
+l'harmonisation des identifiants. **Panel de référence** : ces distances vivent
+désormais dans l'`iv_panel.parquet` LEGACY (sous `Data/Clean/_archive/`) ; le
+panel actif `sanctions_panel.parquet` ne porte que les sanctions + les niveaux
+`exp/imp_polyarchy`.
 
 **Cadrage.** Ces variables sont des **mesures alternatives** de la distance
 géopolitique entre paires de pays, utilisées en *robustesse* dans le
@@ -436,14 +442,16 @@ l'une ni l'autre.
   Covariable de **régime politique** active du DiD (feuille de route, covariables).
 - À distinguer de `polyarchy_dist` (distance, désormais [LEGACY IV], cf. ci-dessous).
 
-### Note — isolation du bloc « LEGACY IV » (script 03)
-- `03_build_treatments.R` expose un flag **`BUILD_LEGACY_IV` (défaut `FALSE`)**.
-  Quand FALSE, `iv_panel.parquet` ne contient **que** les traitements actifs
-  (toutes les variables `sanction_*` / `sanc_*` / `n_common_sanctioners`) **et**
-  le niveau `exp/imp_polyarchy`. Les lectures DPI / Polity5 / ATOP / dyadic MID
-  sont **sautées**, et les colonnes de **distance** IV (`polyarchy_dist`,
-  `joint_dem_vdem`, `ideol_dist`, `polity_dist`, `allied_atop`, `shared_ally_atop`,
-  `mid_direct`, `shared_rival_mid`) ne sont **pas** produites.
-- Passer le flag à `TRUE` reproduit les colonnes IV historiques décrites plus
-  haut. La repro « 0 diff » des 4 colonnes sanctions est intacte dans les deux
-  cas (elles sont hors flag).
+### Note — scission sanctions / IV (réorg #4, remplace l'ancien flag)
+- Le constructeur de traitement a été **scindé** : `03_sanctions/03_build_sanctions.R`
+  (ACTIF) ne produit que `sanctions_panel.parquet` — les variables `sanction_*` /
+  `sanc_*` / `n_common_sanctioners` **et** les niveaux `exp/imp_polyarchy`. Il ne
+  lit plus DPI / Polity5 / ATOP / dyadic MID.
+- Les **8 distances IV** (`polyarchy_dist`, `joint_dem_vdem`, `ideol_dist`,
+  `polity_dist`, `allied_atop`, `shared_ally_atop`, `mid_direct`, `shared_rival_mid`)
+  sont reconstruites par le script **archivé** `_archive/iv_legacy/build_iv_panel.R`
+  (lit `sanctions_panel`, écrit `Data/Clean/_archive/iv_panel.parquet`), hors
+  pipeline actif. `polyarchy_dist`/`joint_dem_vdem` y sont dérivées des niveaux
+  `exp/imp_polyarchy` ; les autres relues depuis les sources brutes.
+- La repro « 0 diff » est validée : 4 colonnes sanctions (`sanctions_panel` vs
+  backup) et 8 distances IV (`iv_panel` legacy vs backup) → 0 différence.

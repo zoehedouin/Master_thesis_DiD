@@ -13,7 +13,7 @@
 #
 # Output : Data/Clean/covariates.parquet (+ .csv) — pays/dyade x annee
 # Entrees : BACI HS6 (Data/Raw/BACI_HS92_V202601) pour HS27 et parts Russie ;
-#           iv_panel.parquet (sanctions) ; un_votes.parquet (condamne, cf. 04).
+#           sanctions_panel.parquet (sanctions) ; un_votes.parquet (condamne, cf. 04).
 # Chemins / wrappers I/O / helpers : 00_setup.R.
 #
 # NOTE design (feuille de route) : OTAN/UE = variable DESCRIPTIVE de balance,
@@ -36,15 +36,15 @@ local({
   if (!file.exists(file.path(.d, "00_setup.R")))
     stop("00_setup.R introuvable en remontant depuis ", getwd())
   source(file.path(.d, "00_setup.R"))  # local=FALSE -> objets dans .GlobalEnv
-})  # fournit PATH_BACI, PATH_CLEAN, PATH_IV_PANEL, wrappers, out_*
+})  # fournit PATH_BACI, PATH_CLEAN, PATH_SANCTIONS_PANEL, wrappers, out_*
 
 log_step("05_build_covariates : setup OK.")
 
 PATH_VOTES <- file.path(PATH_CLEAN, "un_votes.parquet")  # produit par 04
 
 # Frame de reference : panel de traitement (sanctions deja construites en 03).
-panel <- read_parquet_safe(PATH_IV_PANEL)
-log_step(sprintf("iv_panel : %d lignes, %d colonnes.", nrow(panel), ncol(panel)))
+panel <- read_parquet_safe(PATH_SANCTIONS_PANEL)
+log_step(sprintf("sanctions_panel : %d lignes, %d colonnes.", nrow(panel), ncol(panel)))
 
 
 ## TODO (feuille de route — Etape prealable "Covariables" + 2x2)
@@ -68,7 +68,7 @@ log_step(sprintf("iv_panel : %d lignes, %d colonnes.", nrow(panel), ncol(panel))
 ##
 ## C. 2x2 CONDAMNE x SANCTIONNE (quatre cellules) :
 ##    votes <- read_parquet_safe(PATH_VOTES)            # cf. 04, colonne `condamne`
-##    - sanctionne[p,t] : derive de iv_panel (sanction_any / sanction_nontrade
+##    - sanctionne[p,t] : derive de sanctions_panel (sanction_any / sanction_nontrade
 ##      cote partenaire vs Russie ; choisir la def alignee sur 08_ppml.R).
 ##    - cell := fcase(
 ##        condamne==1 & sanctionne==1, "a_both",        # coalition occidentale

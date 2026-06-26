@@ -58,10 +58,19 @@ pipeline numérique d'origine (les fusions reprennent leur logique à l'identiqu
 | `11c_dcdh_by_tier.R` | `../09_dcdh/09_dcdh.R` (effets par palier). |
 | `11d_robustness.R` | `../09_dcdh/09_dcdh.R` (robustesses dCDH). |
 
+## `iv_legacy/` — constructeur du panel IV (hors pipeline actif)
+Le code des familles d'instruments IV (distances + relations), extrait du
+constructeur de traitement lors de sa scission en `03_sanctions/03_build_sanctions.R`
+(actif, sanctions pur) + ce builder archivé.
+
+| Fichier | Rôle |
+|---|---|
+| `build_iv_panel.R` | Lit `Data/Clean/sanctions_panel.parquet`, dérive `polyarchy_dist`/`joint_dem_vdem` des niveaux `exp/imp_polyarchy` déjà présents, reconstruit `ideol_dist` (DPI), `polity_dist` (Polity5), `allied_atop`+`shared_ally_atop` (ATOP), `mid_direct`+`shared_rival_mid` (MID). Écrit `Data/Clean/_archive/iv_panel.parquet`. **Lu par aucun script actif** ; sert à reproduire l'historique IV (consommateurs dans `iv/`, `ipd_robustness/`). |
+
 ## `backups/` — sauvegardes de fichiers
 | Fichier | Note |
 |---|---|
-| `06_build_geopol_measures.R.bak_20260624` | Sauvegarde `.bak` de l'ancien `06` (renommé `03_build_treatments.R`). |
+| `06_build_geopol_measures.R.bak_20260624` | Sauvegarde `.bak` de l'ancien `06` (renommé `03_build_treatments.R` puis scindé en `03_build_sanctions.R`). |
 
 > Backups **de données** (caches `_baci_*`, `iv_panel_backup_*.parquet`) :
 > volumineux et hors dépôt git, ils sont archivés à part dans

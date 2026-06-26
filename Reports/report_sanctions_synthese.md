@@ -1,7 +1,7 @@
 # Synthèse — Event study des sanctions sur le commerce bilatéral
 
 > *Synthèse transversale 08+09 (reste **centrale** dans `Reports/`). Structure par
-> partie (réorg #2) : `03_treatments/03_build_treatments.R`, `08_ppml/08_ppml.R`,
+> partie : `03_sanctions/03_build_sanctions.R`, `08_ppml/08_ppml.R`,
 > `09_dcdh/09_dcdh.R` ; sorties co-localisées dans `08_ppml/` et `09_dcdh/`. Carte
 > du pipeline : [`README_pipeline.md`](README_pipeline.md).*
 

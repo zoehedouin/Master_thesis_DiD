@@ -72,8 +72,8 @@ PATH_FIG <- out_fig("EventStudy")
 # Build panel pkey + dCDH principal (dose en paliers).
 
 # ---- Donnees : panel paire non ordonnee (pkey) -----------------------------
-log_step("Chargement iv_panel + construction panel pkey.")
-d <- read_parquet_safe(PATH_IV_PANEL)
+log_step("Chargement sanctions_panel + construction panel pkey.")
+d <- read_parquet_safe(PATH_SANCTIONS_PANEL)
 d[, pkey := ifelse(exp_iso3 < imp_iso3,
                    paste(exp_iso3, imp_iso3, sep = "_"),
                    paste(imp_iso3, exp_iso3, sep = "_"))]
@@ -149,8 +149,8 @@ print(m_tier$results$ATE)
 # Memes conventions que 11 : logs log(trade+1), groupe = paire non ordonnee,
 # temps = year, cluster = paire (gid numerique), fenetre 2008-2023.
 
-log_step("Chargement iv_panel + panel pkey (window 2008-2023).")
-d <- read_parquet_safe(PATH_IV_PANEL)
+log_step("Chargement sanctions_panel + panel pkey (window 2008-2023).")
+d <- read_parquet_safe(PATH_SANCTIONS_PANEL)
 d[, pkey := ifelse(exp_iso3 < imp_iso3, paste(exp_iso3, imp_iso3, sep = "_"),
                    paste(imp_iso3, exp_iso3, sep = "_"))]
 pk0 <- d[year >= YR_MIN & year <= YR_MAX, .(
@@ -317,8 +317,8 @@ cat("\nFigure ecrite : es_fig02_dcdh_intensity.png\n")
 # 2008-2023, seed 1234).
 
 # ---- Panel pkey de base -----------------------------------------------------
-log_step("Panel pkey + iv_panel.")
-d <- read_parquet_safe(PATH_IV_PANEL)
+log_step("Panel pkey + sanctions_panel.")
+d <- read_parquet_safe(PATH_SANCTIONS_PANEL)
 d[, pkey := ifelse(exp_iso3<imp_iso3, paste(exp_iso3,imp_iso3,sep="_"), paste(imp_iso3,exp_iso3,sep="_"))]
 pk0 <- d[year>=YR_MIN & year<=YR_MAX, .(
   trade_tot=sum(trade_value,na.rm=TRUE), n_active_core=max(sanc_n_active_core),

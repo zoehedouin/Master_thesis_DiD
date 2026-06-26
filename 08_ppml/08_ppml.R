@@ -537,9 +537,9 @@ print(list.files(out_fig("Estimation")))
 # =============================================================================
 
 log_step("Etape 0 : chargement et construction du traitement.")
-# NOTE : 10 charge son PROPRE panel (iv_panel.parquet) et reconstruit pair ;
+# NOTE : 10 charge son PROPRE panel (sanctions_panel.parquet) et reconstruit pair ;
 # distinct du panel strategic charge plus haut (04). On garde les deux loads.
-df <- read_parquet_safe(PATH_IV_PANEL)
+df <- read_parquet_safe(PATH_SANCTIONS_PANEL)
 cat("  - Obs total                :", nrow(df), "\n")
 cat("  - Annees                   :", paste(range(df$year), collapse = "-"), "\n")
 

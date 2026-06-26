@@ -73,9 +73,12 @@ PATH_IPD   <- file.path(PATH_RAW, "IPD")
 PATH_IV    <- file.path(PATH_RAW, "IV")
 
 # Panels canoniques (entrees des scripts d'analyse).
-PATH_MASTER     <- file.path(PATH_CLEAN, "master_panel.parquet")
-PATH_STRATEGIC  <- file.path(PATH_CLEAN, "master_panel_with_strategic.parquet")
-PATH_IV_PANEL   <- file.path(PATH_CLEAN, "iv_panel.parquet")
+PATH_MASTER         <- file.path(PATH_CLEAN, "master_panel.parquet")
+PATH_STRATEGIC      <- file.path(PATH_CLEAN, "master_panel_with_strategic.parquet")
+PATH_SANCTIONS_PANEL <- file.path(PATH_CLEAN, "sanctions_panel.parquet")
+# NB : l'ancien iv_panel.parquet est devenu un artefact LEGACY (distances IV),
+# produit par _archive/iv_legacy/build_iv_panel.R dans Data/Clean/_archive/.
+# Aucun script actif ne le lit -> PATH_IV_PANEL retire de 00_setup.R.
 
 dir.create(PATH_CLEAN, showWarnings = FALSE, recursive = TRUE)
 

@@ -15,7 +15,7 @@
 # Petit fichier : ~193 pays x 2 votes -> a saisir dans un CSV puis charger ici.
 #
 # Output : Data/Clean/un_votes.parquet (+ .csv)  — table pays x resolution + condamne
-# Entrees : iv_panel.parquet (pour la liste ISO3 et le cadrage dyadique Russie)
+# Entrees : sanctions_panel.parquet (pour la liste ISO3 et le cadrage dyadique Russie)
 # Chemins / wrappers I/O / helpers : 00_setup.R.
 # =============================================================================
 
@@ -34,7 +34,7 @@ local({
   if (!file.exists(file.path(.d, "00_setup.R")))
     stop("00_setup.R introuvable en remontant depuis ", getwd())
   source(file.path(.d, "00_setup.R"))  # local=FALSE -> objets dans .GlobalEnv
-})  # fournit PATH_CLEAN, PATH_IV_PANEL, wrappers I/O, log_step, out_*
+})  # fournit PATH_CLEAN, PATH_SANCTIONS_PANEL, wrappers I/O, log_step, out_*
 
 log_step("04_build_un_votes : setup OK.")
 
@@ -43,7 +43,7 @@ log_step("04_build_un_votes : setup OK.")
 PATH_VOTES_RAW <- file.path(PATH_RAW, "UN_votes", "un_votes_roll_call.csv")
 
 # Frame de reference : ISO3 presents dans le panel de traitement.
-panel <- read_parquet_safe(PATH_IV_PANEL,
+panel <- read_parquet_safe(PATH_SANCTIONS_PANEL,
                            col_select = c("exp_iso3", "imp_iso3", "year"))
 iso3_panel <- sort(unique(c(panel$exp_iso3, panel$imp_iso3)))
 log_step(sprintf("ISO3 dans le panel : %d.", length(iso3_panel)))
@@ -74,7 +74,7 @@ log_step(sprintf("ISO3 dans le panel : %d.", length(iso3_panel)))
 ##    (garder aussi le codage 2014 pour le volet Crimee.)
 ##
 ## 4. FUSIONNER sur les dyades Russie : pour chaque partenaire p, joindre
-##    condamne(p) aux dyades RUS<->p de iv_panel (le statut vote est porte par
+##    condamne(p) aux dyades RUS<->p de sanctions_panel (le statut vote est porte par
 ##    le PARTENAIRE, la Russie est la cible commune).
 ##
 ## 5. ECRIRE :

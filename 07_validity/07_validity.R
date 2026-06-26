@@ -13,7 +13,7 @@
 #         tendances paralleles et montrer la survie de l'effet.
 #
 # Output : 07_validity/tables/ , 07_validity/figures/
-# Entrees : master_panel_with_strategic.parquet, iv_panel.parquet,
+# Entrees : master_panel_with_strategic.parquet, sanctions_panel.parquet,
 #           covariates.parquet (cf. 05). Coefs d'event study repris de 08_ppml.R.
 # Chemins / wrappers I/O / helpers : 00_setup.R.
 # =============================================================================

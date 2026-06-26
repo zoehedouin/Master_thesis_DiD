@@ -198,3 +198,26 @@ seuls des ajouts de variables + un flag d'isolation.
   les familles IV (distances V-Dem/DPI/Polity + ATOP/MID) et saute leurs lectures.
   Repro « 0 diff » des 4 colonnes sanctions intacte (hors flag).
 - **Docs** : `Reports/VARIABLES.md` (section variables actives + note flag IV).
+
+---
+
+# Réorg #4 — scission 03 sanctions (actif) / IV (archivé)
+
+- **Renommage** : `03_treatments/03_build_treatments.R` → `03_sanctions/03_build_sanctions.R`.
+- **03_build_sanctions.R (ACTIF)** : suppression du flag `BUILD_LEGACY_IV` et de
+  TOUT le code IV (lectures DPI/Polity5/ATOP/MID + helpers `cow_to_iso3`/
+  `name_to_iso3` + distances + tiers communs). Conserve sanctions (GSDB) + niveaux
+  `exp/imp_polyarchy` (V-Dem). Écrit désormais **`sanctions_panel.parquet`**
+  (variable interne renommée `iv_panel`→`sanc_panel`).
+- **`_archive/iv_legacy/build_iv_panel.R` (NEW, LEGACY)** : lit `sanctions_panel`,
+  dérive `polyarchy_dist`/`joint_dem_vdem` des niveaux, reconstruit `ideol_dist`/
+  `polity_dist`/`allied_atop`/`shared_ally_atop`/`mid_direct`/`shared_rival_mid`
+  depuis DPI/Polity/ATOP/MID (code déplacé, logique inchangée). Écrit
+  `Data/Clean/_archive/iv_panel.parquet`. Lu par aucun script actif.
+- **00_setup.R** : ajout `PATH_SANCTIONS_PANEL` ; retrait de `PATH_IV_PANEL`
+  (plus aucun lecteur actif).
+- **Lecteurs aval** : `04`, `05`, `08`, `09` lisent maintenant `PATH_SANCTIONS_PANEL`
+  (aucun n'utilisait les distances IV). En-têtes `07/10/11` mis à jour.
+- **Données** : `Data/Clean/iv_panel.parquet` périmé déplacé (`mv`) vers
+  `Data/Clean/_archive/` ; backup `iv_panel_backup_20260624.parquet` intact.
+- Repro « 0 diff » des 4 colonnes sanctions préservée (logique GSDB non touchée).

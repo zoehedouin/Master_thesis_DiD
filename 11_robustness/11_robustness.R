@@ -18,7 +18,7 @@
 #     (exportateur, importateur, temps).
 #
 # Output : 11_robustness/tables/ , 11_robustness/figures/
-# Entrees : master_panel_with_strategic.parquet, iv_panel.parquet ; specs de 08/09.
+# Entrees : master_panel_with_strategic.parquet, sanctions_panel.parquet ; specs de 08/09.
 # Chemins / wrappers I/O / helpers : 00_setup.R.
 # =============================================================================
 
