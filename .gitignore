@@ -3,3 +3,7 @@
 .Rhistory
 .RData
 .Rproj.user/
+
+# R session junk
+.Rhistory
+*.Rhistory
