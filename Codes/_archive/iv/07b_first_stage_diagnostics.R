@@ -15,7 +15,7 @@
 #   5. Intervalle d'Anderson-Rubin (inference robuste aux instruments faibles).
 #
 # Adapte au repo : panel auto-contenu Data/Clean/iv_panel.parquet ecrit par
-# 06_build_iv_alternative.R (contient instruments + ipd + trade_value + rta
+# 03_build_treatments.R (ex-06_build_geopol_measures.R) (instruments + ipd + trade_value + rta
 # + log_dist + contig + comlang_off + colony).
 # region_pair construit via countrycode (continents) car master_panel n'a
 # pas de region_o/region_d natifs.

@@ -1,5 +1,9 @@
 # Synthèse — Event study des sanctions sur le commerce bilatéral
 
+> *Réorg `reorg-did` : `06_build_geopol_measures.R` → `Codes/03_build_treatments.R` ;
+> `10_event_study_sanctions.R` → `Codes/08_ppml.R` ; `11*_…` → `Codes/09_dcdh.R`.
+> Carte du pipeline à jour : `README_pipeline.md`.*
+
 *Date : 2026-06-25. Objet : effet causal des sanctions (choc géopolitique) sur le
 commerce bilatéral, cadre gravité PPML. Données : `iv_panel.parquet` (enrichi),
 GSDB v4 brut. Scripts : `06` (enrichi), `10`, `11`, `11b`, `11c`, `11d`.

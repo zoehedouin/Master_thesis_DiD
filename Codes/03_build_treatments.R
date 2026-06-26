@@ -1,10 +1,27 @@
 # =============================================================================
-# 06_build_geopol_measures.R
+# 03_build_treatments.R   (etape prealable — LE constructeur de traitement)
 # -----------------------------------------------------------------------------
-# Construit un panel de "mesures geopolitiques alternatives" (regroupant ce
-# qui etait initialement des "instruments alternatifs", + les sanctions GSDB).
+# Constructeur des VARIABLES DE TRAITEMENT du design DiD (feuille de route,
+# etape prealable "Variables de traitement"). A partir de GSDB v4 il derive :
+#   * sanctions binaires      : sanction_any / sanction_trade / sanction_nontrade
+#   * sanctions par TYPE      : commercial complet/partiel, financier, armes,
+#                               voyage, militaire, autre (replique col. 2 GSDB-R4)
+#   * doses d'intensite       : sanc_n_active_core / sanc_n_active_all
+#                               (-> paliers 0/1/2-5/6+ pour l'AVSQ dCDH)
+#   * n_common_sanctioners    : nb de coalitions tierces sanctionnant i ET j
+# Conserve aussi la covariable de regime polyarchy_dist / V-Dem (feuille de
+# route, covariables). Le 2x2 condamne x sanctionne se construit ensuite en
+# croisant ces sanctions avec les votes ONU (cf. 04_build_un_votes.R).
+#
 # Lit Data/Raw/IV/, harmonise en ISO3, ecrit Data/Clean/iv_panel.parquet
-# (nom conserve pour compatibilite avec scripts 07/07b/07c).
+# (nom de fichier conserve : c'est le panel de traitement consomme par 08/09).
+#
+# NB historique : ce script s'appelait 06_build_geopol_measures.R et servait
+# initialement de fabrique d'"instruments alternatifs". Les familles purement IV
+# (institutional hors V-Dem, strategic_relations : ATOP/MID/DPI/Polity) sont
+# devenues inutiles (leurs consommateurs 07/08/09-IV sont archives) ; elles
+# restent construites mais sont SIGNALEES "[LEGACY IV]" en commentaire ci-dessous
+# pour ne pas casser la reproduction des 4 colonnes historiques (validee "0 diff").
 #
 # Famille "institutional"      (sources : V-Dem v16, DPI 2023, Polity5)
 #   - polyarchy_dist           = |v2x_polyarchy_i - v2x_polyarchy_j|
@@ -48,45 +65,11 @@ suppressPackageStartupMessages({
   library(countrycode); library(stringi)
 })
 
-PATH_ROOT  <- "/Users/zoe/Library/CloudStorage/OneDrive-UniversitéParis-Dauphine/Master_thesis"
-PATH_RAW   <- file.path(PATH_ROOT, "Data", "Raw", "IV")
-PATH_CLEAN <- file.path(PATH_ROOT, "Data", "Clean")
-PATH_PANEL <- file.path(PATH_CLEAN, "master_panel_with_strategic.parquet")
+source("00_setup.R")  # chemins, wrappers I/O NFD-safe, log_step/tic/toc, YEAR_*
 
-# ---- I/O robuste au chemin accentue NFD (OneDrive) -------------------------
-# Les lecteurs C++ (arrow / haven / readxl) n'ouvrent pas un chemin contenant
-# un 'e' accentue normalise NFD. On copie d'abord vers un tempfile ASCII (la
-# copie de base R gere le NFD), puis on lit/ecrit. fread/fwrite/ggsave de base
-# fonctionnent directement et ne sont pas wrappes.
-read_parquet_safe <- function(path, ...) {
-  tmp <- tempfile(fileext = ".parquet")
-  stopifnot(file.copy(path, tmp, overwrite = TRUE)); on.exit(unlink(tmp))
-  as.data.table(arrow::read_parquet(tmp, ...))
-}
-write_parquet_safe <- function(x, path, ...) {
-  tmp <- tempfile(fileext = ".parquet")
-  arrow::write_parquet(x, tmp, ...)
-  stopifnot(file.copy(tmp, path, overwrite = TRUE)); unlink(tmp)
-}
-read_dta_safe <- function(path, ...) {
-  tmp <- tempfile(fileext = ".dta")
-  stopifnot(file.copy(path, tmp, overwrite = TRUE)); on.exit(unlink(tmp))
-  as.data.table(haven::read_dta(tmp, ...))
-}
-read_excel_safe <- function(path, ...) {
-  ext <- paste0(".", tools::file_ext(path))
-  tmp <- tempfile(fileext = ext)
-  stopifnot(file.copy(path, tmp, overwrite = TRUE)); on.exit(unlink(tmp))
-  as.data.table(readxl::read_excel(tmp, ...))
-}
-
-log_step <- function(m) cat(sprintf("[%s] %s\n", format(Sys.time(), "%H:%M:%S"), m))
-tic <- function() invisible(.GlobalEnv$.tic_t <- proc.time()[3])
-toc <- function() round(proc.time()[3] - .GlobalEnv$.tic_t, 1)
-
-# Bornes temporelles du panel master
-YEAR_MIN <- 1995L
-YEAR_MAX <- 2024L
+# Alias locaux pour ne pas toucher le reste du script :
+PATH_RAW   <- PATH_IV         # sources brutes des familles (Data/Raw/IV)
+PATH_PANEL <- PATH_STRATEGIC  # frame de reference = master_panel_with_strategic
 
 log_step("Setup termine.")
 
@@ -127,6 +110,10 @@ name_to_iso3 <- function(nm) {
 }
 
 
+# --- Familles V-Dem / DPI / Polity / ATOP / MID : V-Dem (polyarchy_dist) est
+# --- conservee comme covariable de regime ; le RESTE est [LEGACY IV] (instruments
+# --- abandonnes, consommateurs archives). Code laisse intact pour reproduire les
+# --- colonnes historiques ; non utilise par le pipeline DiD actif.
 # ---- Section 2 : V-Dem v16 (institutional) ----------------------------------
 
 log_step("Section 2 : V-Dem.")

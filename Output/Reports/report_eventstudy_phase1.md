@@ -1,5 +1,8 @@
 # Rapport — Phase 1 : event study Sun & Abraham (sanctions non-commerciales)
 
+> *Réorg `reorg-did` : `10_event_study_sanctions.R` est désormais fusionné dans
+> `Codes/08_ppml.R`. Carte du pipeline à jour : `README_pipeline.md`.*
+
 *Scripts : `10_event_study_sanctions.R`. Données : `iv_panel.parquet`.
 Traitement = `sanction_nontrade` (GSDB-R4), pour éviter la tautologie de
 l'embargo. Spec PPML identique à `04` : FE `exp_iso3^year + imp_iso3^year +
