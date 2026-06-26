@@ -76,6 +76,7 @@ PATH_IV    <- file.path(PATH_RAW, "IV")
 PATH_MASTER         <- file.path(PATH_CLEAN, "master_panel.parquet")
 PATH_STRATEGIC      <- file.path(PATH_CLEAN, "master_panel_with_strategic.parquet")
 PATH_SANCTIONS_PANEL <- file.path(PATH_CLEAN, "sanctions_panel.parquet")
+PATH_UN_VOTES        <- file.path(PATH_CLEAN, "un_votes.parquet")
 # NB : l'ancien iv_panel.parquet est devenu un artefact LEGACY (distances IV),
 # produit par _archive/iv_legacy/build_iv_panel.R dans Data/Clean/_archive/.
 # Aucun script actif ne le lit -> PATH_IV_PANEL retire de 00_setup.R.
