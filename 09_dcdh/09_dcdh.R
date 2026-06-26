@@ -35,7 +35,15 @@ suppressPackageStartupMessages({
   library(ggplot2)
   library(haven)
 })
-source("00_setup.R")
+# --- bootstrap : remonte jusqu'au dossier de 00_setup.R (racine analytique) --
+local({
+  .d <- normalizePath(getwd(), mustWork = FALSE)
+  while (!file.exists(file.path(.d, "00_setup.R")) && dirname(.d) != .d) .d <- dirname(.d)
+  if (!file.exists(file.path(.d, "00_setup.R")))
+    stop("00_setup.R introuvable en remontant depuis ", getwd())
+  source(file.path(.d, "00_setup.R"))  # local=FALSE -> objets dans .GlobalEnv
+})
+PART <- "09_dcdh"   # co-localisation des sorties de cette partie (out_*)
 
 # ---- Echantillonnage des controles (contrainte memoire 8 Go) ---------------
 # Les scripts 11* sous-echantillonnent les paires jamais-traitees (controles)

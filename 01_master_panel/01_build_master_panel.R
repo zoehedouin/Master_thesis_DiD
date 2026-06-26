@@ -18,7 +18,14 @@ suppressPackageStartupMessages({
   library(readxl)
 })
 
-source("00_setup.R")  # PATH_RAW/CLEAN/BACI/GRAV/IPD, wrappers, log_step, YEAR_*
+# --- bootstrap : remonte jusqu'au dossier de 00_setup.R (racine analytique) --
+local({
+  .d <- normalizePath(getwd(), mustWork = FALSE)
+  while (!file.exists(file.path(.d, "00_setup.R")) && dirname(.d) != .d) .d <- dirname(.d)
+  if (!file.exists(file.path(.d, "00_setup.R")))
+    stop("00_setup.R introuvable en remontant depuis ", getwd())
+  source(file.path(.d, "00_setup.R"))  # local=FALSE -> objets dans .GlobalEnv
+})  # fournit PATH_RAW/CLEAN/BACI/GRAV/IPD, wrappers, log_step, YEAR_*
 
 stopifnot(dir.exists(PATH_RAW), dir.exists(PATH_BACI),
           dir.exists(PATH_GRAV), dir.exists(PATH_IPD))

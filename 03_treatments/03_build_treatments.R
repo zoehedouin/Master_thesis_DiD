@@ -65,7 +65,14 @@ suppressPackageStartupMessages({
   library(countrycode); library(stringi)
 })
 
-source("00_setup.R")  # chemins, wrappers I/O NFD-safe, log_step/tic/toc, YEAR_*
+# --- bootstrap : remonte jusqu'au dossier de 00_setup.R (racine analytique) --
+local({
+  .d <- normalizePath(getwd(), mustWork = FALSE)
+  while (!file.exists(file.path(.d, "00_setup.R")) && dirname(.d) != .d) .d <- dirname(.d)
+  if (!file.exists(file.path(.d, "00_setup.R")))
+    stop("00_setup.R introuvable en remontant depuis ", getwd())
+  source(file.path(.d, "00_setup.R"))  # local=FALSE -> objets dans .GlobalEnv
+})  # chemins, wrappers I/O NFD-safe, log_step/tic/toc, YEAR_*
 
 # Alias locaux pour ne pas toucher le reste du script :
 PATH_RAW   <- PATH_IV         # sources brutes des familles (Data/Raw/IV)

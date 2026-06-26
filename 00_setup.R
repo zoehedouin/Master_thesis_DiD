@@ -26,20 +26,22 @@ suppressPackageStartupMessages({
 })
 
 # ---- Detection des racines --------------------------------------------------
-# DATA_ROOT    : dossier contenant Data/Clean/  (les panels parquet).
-# PROJECT_ROOT : dossier contenant Codes/ et Output/ (les scripts et sorties).
-# Sur cette machine les deux DIFFERENT (Data un niveau au-dessus de Codes) ;
-# sur les layouts OneDrive/Desktop ils coincident. On detecte chacun
-# separement en remontant depuis getwd(), avec une liste de replis explicites.
+# DATA_ROOT     : dossier contenant Data/Clean/ (panels parquet, CENTRAL).
+# ANALYSIS_ROOT : racine du depot analytique (contient 00_setup.R, .git, les
+#                 dossiers de partie 01_*..11_*, Reports/). Les sorties de
+#                 SECTION sont co-localisees sous ANALYSIS_ROOT/<PART>/.
+# Sur cette machine les deux DIFFERENT (Data un niveau au-dessus de la racine
+# analytique) ; sur les layouts OneDrive/Desktop ils coincident. On detecte
+# chacun en remontant depuis getwd(), avec une liste de replis explicites.
 
 .ascend_candidates <- function() {
-  # getwd() et ses ancetres (jusqu'a 5 niveaux) + replis machines connues.
+  # getwd() et ses ancetres (jusqu'a 6 niveaux) + replis machines connues.
   here <- normalizePath(getwd(), mustWork = FALSE)
   ups  <- here
-  for (i in 1:5) ups <- c(ups, dirname(ups[length(ups)]))
+  for (i in 1:6) ups <- c(ups, dirname(ups[length(ups)]))
   fallbacks <- c(
-    "/Users/zoe/Thesis",
     "/Users/zoe/Thesis/Master_thesis_DiD",
+    "/Users/zoe/Thesis",
     "/Users/zoe/Library/CloudStorage/OneDrive-UniversiteParis-Dauphine/Master_thesis",
     "/Users/zoe/Library/CloudStorage/OneDrive-UniversitéParis-Dauphine/Master_thesis",
     "/Users/zoe/Desktop/Master_thesis"
@@ -47,19 +49,20 @@ suppressPackageStartupMessages({
   unique(c(ups, fallbacks))
 }
 
-.find_root <- function(marker, label) {
+# Renvoie le premier ancetre contenant l'UN des marqueurs (fichier ou dossier).
+.find_root <- function(markers, label) {
   for (cand in .ascend_candidates()) {
-    if (dir.exists(file.path(cand, marker))) return(cand)
+    if (any(file.exists(file.path(cand, markers)))) return(cand)
   }
-  stop(sprintf("00_setup.R : impossible de localiser %s (marqueur '%s'). ",
-               label, marker),
-       "Lancez les scripts depuis Codes/ ou la racine du projet, ou ajoutez ",
-       "la racine a .ascend_candidates().")
+  stop(sprintf("00_setup.R : impossible de localiser %s (marqueurs : %s). ",
+               label, paste(markers, collapse = ", ")),
+       "Lancez les scripts depuis la racine analytique ou un dossier de partie, ",
+       "ou ajoutez la racine a .ascend_candidates().")
 }
 
-DATA_ROOT    <- .find_root(file.path("Data", "Clean"), "DATA_ROOT")
-PROJECT_ROOT <- tryCatch(.find_root("Output", "PROJECT_ROOT"),
-                         error = function(e) DATA_ROOT)
+DATA_ROOT     <- .find_root(file.path("Data", "Clean"), "DATA_ROOT")
+ANALYSIS_ROOT <- .find_root(c(".git", "00_setup.R"), "ANALYSIS_ROOT")
+PROJECT_ROOT  <- ANALYSIS_ROOT   # alias retro-compatible
 
 # ---- Chemins derives --------------------------------------------------------
 PATH_RAW   <- file.path(DATA_ROOT, "Data", "Raw")
@@ -68,7 +71,6 @@ PATH_BACI  <- file.path(PATH_RAW, "BACI_HS92_V202601")
 PATH_GRAV  <- file.path(PATH_RAW, "Gravity")
 PATH_IPD   <- file.path(PATH_RAW, "IPD")
 PATH_IV    <- file.path(PATH_RAW, "IV")
-PATH_OUT   <- file.path(PROJECT_ROOT, "Output")
 
 # Panels canoniques (entrees des scripts d'analyse).
 PATH_MASTER     <- file.path(PATH_CLEAN, "master_panel.parquet")
@@ -77,18 +79,34 @@ PATH_IV_PANEL   <- file.path(PATH_CLEAN, "iv_panel.parquet")
 
 dir.create(PATH_CLEAN, showWarnings = FALSE, recursive = TRUE)
 
-# Helpers de sortie : renvoient un chemin dans Output/<famille>/<sub> en creant
-# le dossier au besoin. Ex. out_tab("EventStudy") -> .../Output/Tables/EventStudy
-.out_dir <- function(family, sub = NULL) {
-  p <- file.path(PATH_OUT, family)
+# Helpers de sortie : CO-LOCALISATION PAR PARTIE -----------------------------
+# Chaque script d'analyse (06-11) declare en tete : PART <- "08_ppml".
+# out_tab/out_fig/out_map renvoient le DOSSIER de sortie de la partie courante
+# (ANALYSIS_ROOT/<PART>/{tables,figures,maps}), cree au besoin. L'argument
+# (ancien theme : "EventStudy", "Estimation"...) est ACCEPTE pour compatibilite
+# mais IGNORE : le routage se fait par PART. Consequence : aucun site d'appel
+# out_*() n'a besoin d'etre modifie, et le split EventStudy entre 08 et 09 se
+# fait automatiquement (08 a PART="08_ppml", 09 a PART="09_dcdh").
+.part_dir <- function(kind) {
+  if (!exists("PART", inherits = TRUE) || is.null(PART) || !nzchar(PART))
+    stop("00_setup.R : variable PART non definie. Ajoutez PART <- \"NN_partie\" ",
+         "en tete du script (apres le source) avant tout appel a out_*().")
+  p <- file.path(ANALYSIS_ROOT, PART, kind)
+  dir.create(p, showWarnings = FALSE, recursive = TRUE)
+  p
+}
+out_tab <- function(sub = NULL) .part_dir("tables")
+out_fig <- function(sub = NULL) .part_dir("figures")
+out_map <- function(sub = NULL) .part_dir("maps")
+# Rapports : CENTRAUX (synthese / transversaux) sous ANALYSIS_ROOT/Reports/.
+# Les rapports de PARTIE (NN_report.md) vivent dans le dossier de la partie et
+# sont rediges a la main (pas via ce helper).
+out_rep <- function(sub = NULL) {
+  p <- file.path(ANALYSIS_ROOT, "Reports")
   if (!is.null(sub)) p <- file.path(p, sub)
   dir.create(p, showWarnings = FALSE, recursive = TRUE)
   p
 }
-out_tab <- function(sub = NULL) .out_dir("Tables",  sub)
-out_fig <- function(sub = NULL) .out_dir("Figures", sub)
-out_map <- function(sub = NULL) .out_dir("Maps",    sub)
-out_rep <- function(sub = NULL) .out_dir("Reports", sub)
 
 # ---- I/O robuste au chemin accentue NFD (OneDrive) --------------------------
 # Les lecteurs C++ (arrow / haven / readxl) n'ouvrent pas un chemin contenant
@@ -132,5 +150,5 @@ if (requireNamespace("fixest", quietly = TRUE)) {
   fixest::setFixest_nthreads(0)  # fixest : tous les coeurs (mono-thread sur cette machine)
 }
 
-log_step(sprintf("00_setup.R OK | DATA_ROOT=%s | PROJECT_ROOT=%s",
-                 DATA_ROOT, PROJECT_ROOT))
+log_step(sprintf("00_setup.R OK | DATA_ROOT=%s | ANALYSIS_ROOT=%s",
+                 DATA_ROOT, ANALYSIS_ROOT))

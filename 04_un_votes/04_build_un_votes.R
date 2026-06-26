@@ -27,7 +27,14 @@ suppressPackageStartupMessages({
   library(countrycode)
 })
 
-source("00_setup.R")  # PATH_CLEAN, PATH_IV_PANEL, wrappers I/O, log_step, out_*
+# --- bootstrap : remonte jusqu'au dossier de 00_setup.R (racine analytique) --
+local({
+  .d <- normalizePath(getwd(), mustWork = FALSE)
+  while (!file.exists(file.path(.d, "00_setup.R")) && dirname(.d) != .d) .d <- dirname(.d)
+  if (!file.exists(file.path(.d, "00_setup.R")))
+    stop("00_setup.R introuvable en remontant depuis ", getwd())
+  source(file.path(.d, "00_setup.R"))  # local=FALSE -> objets dans .GlobalEnv
+})  # fournit PATH_CLEAN, PATH_IV_PANEL, wrappers I/O, log_step, out_*
 
 log_step("04_build_un_votes : setup OK.")
 

@@ -18,7 +18,14 @@ suppressPackageStartupMessages({
   library(arrow)
 })
 
-source("00_setup.R")  # PATH_RAW/CLEAN/BACI, wrappers I/O, log_step
+# --- bootstrap : remonte jusqu'au dossier de 00_setup.R (racine analytique) --
+local({
+  .d <- normalizePath(getwd(), mustWork = FALSE)
+  while (!file.exists(file.path(.d, "00_setup.R")) && dirname(.d) != .d) .d <- dirname(.d)
+  if (!file.exists(file.path(.d, "00_setup.R")))
+    stop("00_setup.R introuvable en remontant depuis ", getwd())
+  source(file.path(.d, "00_setup.R"))  # local=FALSE -> objets dans .GlobalEnv
+})  # fournit PATH_RAW/CLEAN/BACI, wrappers I/O, log_step
 
 stopifnot(dir.exists(PATH_BACI), dir.exists(PATH_CLEAN))
 stopifnot(file.exists(file.path(PATH_CLEAN, "master_panel.parquet")))

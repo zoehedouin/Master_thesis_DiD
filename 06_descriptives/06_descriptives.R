@@ -70,7 +70,15 @@ suppressPackageStartupMessages({
   library(fixest)
 })
 
-source("00_setup.R")
+# --- bootstrap : remonte jusqu'au dossier de 00_setup.R (racine analytique) --
+local({
+  .d <- normalizePath(getwd(), mustWork = FALSE)
+  while (!file.exists(file.path(.d, "00_setup.R")) && dirname(.d) != .d) .d <- dirname(.d)
+  if (!file.exists(file.path(.d, "00_setup.R")))
+    stop("00_setup.R introuvable en remontant depuis ", getwd())
+  source(file.path(.d, "00_setup.R"))  # local=FALSE -> objets dans .GlobalEnv
+})
+PART <- "06_descriptives"   # co-localisation des sorties de cette partie (out_*)
 
 # Theme global (commun aux trois scripts d'origine)
 theme_memoir <- theme_minimal(base_size = 12) +

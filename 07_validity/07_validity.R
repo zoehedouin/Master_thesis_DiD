@@ -32,7 +32,15 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
-source("00_setup.R")  # PATH_*, wrappers, out_tab/out_fig, log_step/tic/toc
+# --- bootstrap : remonte jusqu'au dossier de 00_setup.R (racine analytique) --
+local({
+  .d <- normalizePath(getwd(), mustWork = FALSE)
+  while (!file.exists(file.path(.d, "00_setup.R")) && dirname(.d) != .d) .d <- dirname(.d)
+  if (!file.exists(file.path(.d, "00_setup.R")))
+    stop("00_setup.R introuvable en remontant depuis ", getwd())
+  source(file.path(.d, "00_setup.R"))  # local=FALSE -> objets dans .GlobalEnv
+})  # PATH_*, wrappers, out_tab/out_fig, log_step/tic/toc
+PART <- "07_validity"   # co-localisation des sorties de cette partie (out_*)
 
 PATH_TAB <- out_tab("Validity")
 PATH_FIG <- out_fig("Validity")

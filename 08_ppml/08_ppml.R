@@ -45,7 +45,15 @@ suppressPackageStartupMessages({
   library(kableExtra)
 })
 
-source("00_setup.R")
+# --- bootstrap : remonte jusqu'au dossier de 00_setup.R (racine analytique) --
+local({
+  .d <- normalizePath(getwd(), mustWork = FALSE)
+  while (!file.exists(file.path(.d, "00_setup.R")) && dirname(.d) != .d) .d <- dirname(.d)
+  if (!file.exists(file.path(.d, "00_setup.R")))
+    stop("00_setup.R introuvable en remontant depuis ", getwd())
+  source(file.path(.d, "00_setup.R"))  # local=FALSE -> objets dans .GlobalEnv
+})
+PART <- "08_ppml"   # co-localisation des sorties de cette partie (out_*)
 
 setFixest_etable(markdown = FALSE)
 # (setFixest_nthreads(0) deja regle dans 00_setup.R ; log_step/tic/toc fournis.)
