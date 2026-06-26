@@ -149,6 +149,17 @@ sanc_und <- sanc_und[, .(
   by = .(iso_a, iso_b, year)]
 cat("  - Sanctions undirected (pair-years) :", nrow(sanc_und), "\n")
 
+# Flag DIRIGE (additif) : ensemble des (sender, year) ou le sender a sanctionne
+# la RUSSIE (target == "RUS"). Derive de la table DIRIGEE sanc_dir AVANT toute
+# symetrisation ; GSDB dyadic a deja expanse les sanctions UE en Etats membres
+# senders. Sert a etiqueter en aval "le PARTENAIRE sanctionne la Russie"
+# (cf. Section 8 -> colonne sanc_partner_to_rus). N'altere AUCUNE colonne
+# symetrisee existante.
+dir_to_rus <- unique(sanc_dir[target == "RUS", .(sender, year)])
+dir_to_rus[, flag := 1L]
+cat("  - Sanctions DIRIGEES partenaire->RUS (sender-years) :", nrow(dir_to_rus),
+    "| senders distincts :", uniqueN(dir_to_rus$sender), "\n")
+
 # ---- Section 6ter : indicatrices par TYPE + doses d'intensite (ADDITIF) -----
 # N'altere PAS les 4 colonnes historiques ci-dessus. Memes conventions :
 #   - agreger par max sur les cas coexistants par (sender, target, year) ;
@@ -350,6 +361,20 @@ sanc_panel <- merge(sanc_panel, common_snc,
 sanc_panel[is.na(n_common_sanctioners) & year <= 2023L,
          n_common_sanctioners := 0L]
 sanc_panel[year > 2023L, n_common_sanctioners := NA_integer_]
+
+# Flag DIRIGE additif : sanc_partner_to_rus = 1 si le cote NON-RUS de la paire
+# est sender d'une sanction CIBLANT la Russie cette annee. Label de PARTENAIRE
+# (identique sur les deux sens de trade de la paire RUS-partenaire) ; 0 pour les
+# dyades sans RUS. NE depend PAS de sanction_any (non-dirige) : corrige le 2x2
+# qui confondait sanctionneurs et cibles co-sanctionnees par la Russie.
+sanc_panel[, .ptn := fifelse(iso_a == "RUS", iso_b,
+                    fifelse(iso_b == "RUS", iso_a, NA_character_))]
+sanc_panel <- merge(sanc_panel,
+                    dir_to_rus[, .(.ptn = sender, year, sanc_partner_to_rus = flag)],
+                    by = c(".ptn", "year"), all.x = TRUE)
+sanc_panel[is.na(sanc_partner_to_rus), sanc_partner_to_rus := 0L]
+sanc_panel[!is.na(.ptn) & year > 2023L, sanc_partner_to_rus := NA_integer_]
+sanc_panel[, .ptn := NULL]
 
 
 # ---- Section 9 : Diagnostics ------------------------------------------------
