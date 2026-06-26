@@ -1,10 +1,11 @@
 # =============================================================================
-# build_master_panel.R
+# 01_build_master_panel.R   (etape prealable — construction des donnees)
 # -----------------------------------------------------------------------------
 # Construction de la base master dyadique directionnelle pour le memoire M2.
 # Sources : BACI HS92 V202601, Gravity CEPII V202211 (time-invariant only),
 #           IPD Bailey-Strezhnev-Voeten 1946-2025, World Bank WDI.
 # Output  : Data/Clean/master_panel.parquet et .csv
+# Chemins / wrappers I/O / helpers (log_step, YEAR_MIN/MAX) : 00_setup.R.
 # =============================================================================
 
 
@@ -17,23 +18,10 @@ suppressPackageStartupMessages({
   library(readxl)
 })
 
-setDTthreads(0)
-
-PATH_ROOT  <- "/Users/zoe/Desktop/Master_thesis"
-PATH_RAW   <- file.path(PATH_ROOT, "Data", "Raw")
-PATH_CLEAN <- file.path(PATH_ROOT, "Data", "Clean")
-PATH_BACI  <- file.path(PATH_RAW, "BACI_HS92_V202601")
-PATH_GRAV  <- file.path(PATH_RAW, "Gravity")
-PATH_IPD   <- file.path(PATH_RAW, "IPD")
+source("00_setup.R")  # PATH_RAW/CLEAN/BACI/GRAV/IPD, wrappers, log_step, YEAR_*
 
 stopifnot(dir.exists(PATH_RAW), dir.exists(PATH_BACI),
           dir.exists(PATH_GRAV), dir.exists(PATH_IPD))
-dir.create(PATH_CLEAN, showWarnings = FALSE, recursive = TRUE)
-
-YEAR_MIN <- 1995L
-YEAR_MAX <- 2024L
-
-log_step <- function(msg) cat(sprintf("[%s] %s\n", format(Sys.time(), "%H:%M:%S"), msg))
 
 log_step("Setup termine. Periode cible : 1995-2024.")
 

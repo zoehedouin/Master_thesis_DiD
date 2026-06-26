@@ -1,12 +1,13 @@
 # =============================================================================
-# 02_build_strategic_panel.R
+# 02_build_strategic_panel.R   (etape prealable — construction des donnees)
 # -----------------------------------------------------------------------------
-# Enrichit master_panel.parquet (produit par build_master_panel.R) avec deux
+# Enrichit master_panel.parquet (produit par 01_build_master_panel.R) avec deux
 # variables agregees sur les codes HS6 strategiques (classification Aiyar et
 # al. 2024, IMF "Geoeconomic Fragmentation") :
 #   - strategic_trade_value : somme du commerce sur les codes HS6 strategiques
 #   - strategic_trade_share : ratio strategic / total (NA si trade_value == 0)
 # Output : Data/Clean/master_panel_with_strategic.parquet et .csv
+# Chemins / wrappers I/O / helpers : centralises dans 00_setup.R.
 # =============================================================================
 
 
@@ -17,17 +18,10 @@ suppressPackageStartupMessages({
   library(arrow)
 })
 
-setDTthreads(0)
-
-PATH_ROOT  <- "/Users/zoe/Desktop/Master_thesis"
-PATH_RAW   <- file.path(PATH_ROOT, "Data", "Raw")
-PATH_CLEAN <- file.path(PATH_ROOT, "Data", "Clean")
-PATH_BACI  <- file.path(PATH_RAW, "BACI_HS92_V202601")
+source("00_setup.R")  # PATH_RAW/CLEAN/BACI, wrappers I/O, log_step
 
 stopifnot(dir.exists(PATH_BACI), dir.exists(PATH_CLEAN))
 stopifnot(file.exists(file.path(PATH_CLEAN, "master_panel.parquet")))
-
-log_step <- function(msg) cat(sprintf("[%s] %s\n", format(Sys.time(), "%H:%M:%S"), msg))
 
 log_step("Setup termine.")
 
