@@ -39,7 +39,8 @@ sous `Rscript` comme en `source()` interactif.
 | — | `_archive/iv_legacy/build_iv_panel.R` | **archivé** (hors pipeline) | legacy IV | `Data/Clean/_archive/iv_panel.parquet` |
 | 04 | `04_un_votes/04_build_un_votes.R` | **NEW (squelette)** | préliminaire (votes ONU) | `Data/Clean/un_votes.*` |
 | 05 | `05_covariates/05_build_covariates.R` | **NEW (squelette)** | préalable (covariables + 2×2) | `Data/Clean/covariates.*` |
-| 06 | `06_descriptives/06_descriptives.R` | **fusion** (`03a+03b+03c`) | §1 descriptives | `06_descriptives/{figures,tables,maps}/` |
+| 06 | `06_descriptives/06_descriptives.R` | **fusion** (`03a+03b+03c`) | §1 descriptives (socle général) | `06_descriptives/{figures,tables,maps}/` |
+| 06b | `06_descriptives_did/06_descriptives_did.R` | **NEW** | §1 descriptives (bloc DiD Russie) | `06_descriptives_did/{figures,tables,maps}/` (préfixe `did_`) |
 | 07 | `07_validity/07_validity.R` | **NEW (squelette)** | §2 validité (balance, pré-tendances, HonestDiD) | `07_validity/{figures,tables}/` |
 | 08 | `08_ppml/08_ppml.R` | **fusion** (ex-`04`+ex-`10`) | §3 PPML (statique, type, 2×2, Sun-Abraham) | `08_ppml/{figures,tables}/` |
 | 09 | `09_dcdh/09_dcdh.R` | **fusion** (`11`+`11b`+`11c`+`11d`) + skel. `dist_lag_het` | §4 intensité dCDH | `09_dcdh/{figures,tables}/` |
