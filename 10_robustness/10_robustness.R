@@ -1,8 +1,8 @@
 # =============================================================================
-# 11_robustness.R   (etape 6 — robustesses et tests de falsification)
+# 10_robustness.R   (etape 6 — robustesses et tests de falsification)
 # -----------------------------------------------------------------------------
 # Tests de robustesse et de falsification du design DiD (feuille de route §6),
-# une fois les estimations principales obtenues (08_ppml.R, 09_dcdh.R) :
+# une fois les estimations principales obtenues (07_ppml.R, 08_dcdh.R) :
 #   * PLACEBOS : dates de traitement factices (cutoffs avances/recules) ;
 #     unites factices (paires jamais traitees assignees au traitement).
 #   * GROUPES DE CONTROLE / FENETRES alternatifs : restreindre/ponderer les
@@ -17,8 +17,8 @@
 #   * INFERENCE : cluster paire NON ordonnee ; robustesse au three-way
 #     (exportateur, importateur, temps).
 #
-# Output : 11_robustness/tables/ , 11_robustness/figures/
-# Entrees : master_panel_with_strategic.parquet, sanctions_panel.parquet ; specs de 08/09.
+# Output : 10_robustness/tables/ , 10_robustness/figures/
+# Entrees : master_panel_with_strategic.parquet, sanctions_panel.parquet ; specs de 07/08.
 # Chemins / wrappers I/O / helpers : 00_setup.R.
 # =============================================================================
 
@@ -44,12 +44,12 @@ local({
     stop("00_setup.R introuvable en remontant depuis ", getwd())
   source(file.path(.d, "00_setup.R"))  # local=FALSE -> objets dans .GlobalEnv
 })  # PATH_*, wrappers, out_tab/out_fig, log_step/tic/toc
-PART <- "11_robustness"   # co-localisation des sorties de cette partie (out_*)
+PART <- "10_robustness"   # co-localisation des sorties de cette partie (out_*)
 
 PATH_TAB <- out_tab("Robustness")
 PATH_FIG <- out_fig("Robustness")
 
-log_step("11_robustness : setup OK.")
+log_step("10_robustness : setup OK.")
 
 df <- read_parquet_safe(PATH_STRATEGIC)
 log_step(sprintf("panel : %d lignes.", nrow(df)))
@@ -70,9 +70,9 @@ log_step(sprintf("panel : %d lignes.", nrow(df)))
 ##      stabilite des estimations.
 ##
 ## 3. TRIANGULATION PPML vs LOGS (table cote a cote) :
-##    - Memes traitements, deux estimateurs : fepois (PPML, 08) vs feols sur
-##      log(trade+1) (cadre dCDH, 09). Comparer SIGNES et ORDRES DE GRANDEUR.
-##    - Sortie : 11_robustness/tables/tab_triangulation_ppml_logs.{csv,tex}.
+##    - Memes traitements, deux estimateurs : fepois (PPML, 07) vs feols sur
+##      log(trade+1) (cadre dCDH, 08). Comparer SIGNES et ORDRES DE GRANDEUR.
+##    - Sortie : 10_robustness/tables/tab_triangulation_ppml_logs.{csv,tex}.
 ##
 ## 4. HETEROGENEITE PAR SENDER :
 ##    - Interagir le traitement avec l'identite du sender (USA, CAN, JPN, GBR,
@@ -90,4 +90,4 @@ log_step(sprintf("panel : %d lignes.", nrow(df)))
 ## Packages : fixest, DIDmultiplegtDYN, ggplot2, data.table, arrow.
 ## NE RIEN INVENTER : squelette uniquement.
 
-log_step("11_robustness : squelette charge. Implementer apres les estimations principales.")
+log_step("10_robustness : squelette charge. Implementer apres les estimations principales.")

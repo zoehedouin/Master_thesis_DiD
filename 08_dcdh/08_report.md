@@ -1,8 +1,8 @@
 # Rapport — Dose d'intensité des sanctions + Phase 3 (dCDH)
 
-> *Rapport de la **partie 09_dcdh** (produit par `09_dcdh.R`, fusion de
+> *Rapport de la **partie 08_dcdh** (produit par `08_dcdh.R`, fusion de
 > `11/11b/11c/11d`). Traitement construit en amont par
-> [`../03_treatments/03_build_treatments.R`](../03_treatments/03_build_treatments.R).
+> [`../03_sanctions/03_build_sanctions.R`](../03_sanctions/03_build_sanctions.R).
 > Sorties co-localisées dans `figures/` et `tables/`. Synthèse transversale :
 > [`../Reports/report_sanctions_synthese.md`](../Reports/report_sanctions_synthese.md) ;
 > carte : [`../Reports/README_pipeline.md`](../Reports/README_pipeline.md).*

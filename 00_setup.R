@@ -85,13 +85,13 @@ PATH_COVARIATES      <- file.path(PATH_CLEAN, "covariates_panel.parquet")
 dir.create(PATH_CLEAN, showWarnings = FALSE, recursive = TRUE)
 
 # Helpers de sortie : CO-LOCALISATION PAR PARTIE -----------------------------
-# Chaque script d'analyse (06-11) declare en tete : PART <- "08_ppml".
+# Chaque script d'analyse (06-10) declare en tete : PART <- "07_ppml".
 # out_tab/out_fig/out_map renvoient le DOSSIER de sortie de la partie courante
 # (ANALYSIS_ROOT/<PART>/{tables,figures,maps}), cree au besoin. L'argument
 # (ancien theme : "EventStudy", "Estimation"...) est ACCEPTE pour compatibilite
 # mais IGNORE : le routage se fait par PART. Consequence : aucun site d'appel
-# out_*() n'a besoin d'etre modifie, et le split EventStudy entre 08 et 09 se
-# fait automatiquement (08 a PART="08_ppml", 09 a PART="09_dcdh").
+# out_*() n'a besoin d'etre modifie, et le split EventStudy entre 07 et 08 se
+# fait automatiquement (07 a PART="07_ppml", 08 a PART="08_dcdh").
 .part_dir <- function(kind) {
   if (!exists("PART", inherits = TRUE) || is.null(PART) || !nzchar(PART))
     stop("00_setup.R : variable PART non definie. Ajoutez PART <- \"NN_partie\" ",

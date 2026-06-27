@@ -6,7 +6,7 @@
 > ci-dessous (familles 1 et 2) ne sont plus dans le panel actif : elles sont
 > reconstruites par le script archivé `_archive/iv_legacy/build_iv_panel.R`
 > (→ `Data/Clean/_archive/iv_panel.parquet`), hors pipeline. Gravité/PPML =
-> `08_ppml/08_ppml.R`. Carte : [`README_pipeline.md`](README_pipeline.md).*
+> `07_ppml/07_ppml.R`. Carte : [`README_pipeline.md`](README_pipeline.md).*
 
 Ce document décrit, pour chaque variable des familles « instruments alternatifs »,
 ce qu'elle mesure, ses sources, sa formule, sa construction dyadique, et
@@ -407,7 +407,7 @@ l'une ni l'autre.
 
 > Ces 4 ajouts servent le design DiD (sanctions/votes ONU). Ils ne sont PAS des
 > instruments. Sources : `01_build_master_panel.R`, `02_build_strategic_panel.R`,
-> `03_build_treatments.R`.
+> `03_sanctions/03_build_sanctions.R`.
 
 ### `exp_eu` / `imp_eu` / `pair_eu` (script 01)
 - **Mesure** : appartenance à la CEE/UE (0/1 par pays-année), mergée des deux

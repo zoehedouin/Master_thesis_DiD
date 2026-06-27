@@ -9,7 +9,8 @@
 >
 > *Frontière : ici on **montre** (moyennes/densités/indices BRUTS), on ne **juge**
 > pas — l'écart standardisé (SMD), le seuil |SMD|>0.1 et le verdict de balance
-> sont en `07_validity`. Russie = cible, on raisonne en `partner_iso3`.*
+> seront construits **ici** (`06_descriptives_did`, tâche ultérieure) ; pré-tendances
+> + HonestDiD vivent en `07_ppml`. Russie = cible, on raisonne en `partner_iso3`.*
 
 ## À rédiger (feuille de route §1)
 

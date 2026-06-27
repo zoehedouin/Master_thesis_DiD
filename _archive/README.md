@@ -51,12 +51,26 @@ pipeline numérique d'origine (les fusions reprennent leur logique à l'identiqu
 
 | Fichier | Fusionné dans |
 |---|---|
-| `04_gravity_estimation.R` | `../08_ppml/08_ppml.R` (échine PPML statique + type + 2×2). |
-| `10_event_study_sanctions.R` | `../08_ppml/08_ppml.R` (event study Sun & Abraham). |
-| `11_intensity_dcdh.R` | `../09_dcdh/09_dcdh.R` (AVSQ intensité en paliers). |
-| `11b_dcdh_outputs.R` | `../09_dcdh/09_dcdh.R` (sorties/figures dCDH). |
-| `11c_dcdh_by_tier.R` | `../09_dcdh/09_dcdh.R` (effets par palier). |
-| `11d_robustness.R` | `../09_dcdh/09_dcdh.R` (robustesses dCDH). |
+| `04_gravity_estimation.R` | ex-`08_ppml` (event study **mondial** pré-refonte → voir `08_ppml_legacy.R`). |
+| `10_event_study_sanctions.R` | ex-`08_ppml` (idem). |
+| `08_ppml_legacy.R` | **event study mondial pré-refonte** (fusion ex-`04`+ex-`10`, 14 cohortes, ~26 000 paires ; ATT mondial historique = **−0,265**). **Remplacé** par le PPML **Russie-centré** réécrit à neuf en `../07_ppml/07_ppml.R`. |
+| `11_intensity_dcdh.R` | `../08_dcdh/08_dcdh.R` (AVSQ intensité en paliers). |
+| `11b_dcdh_outputs.R` | `../08_dcdh/08_dcdh.R` (sorties/figures dCDH). |
+| `11c_dcdh_by_tier.R` | `../08_dcdh/08_dcdh.R` (effets par palier). |
+| `11d_robustness.R` | `../08_dcdh/08_dcdh.R` (robustesses dCDH). |
+
+## `validity_skeleton/` — partie validité dissoute (ex-`07_validity`)
+Squelette jamais implémenté. Dissous lors de la renumérotation : les **pré-tendances**
+et **HonestDiD** sont intégrés au PPML (`../07_ppml/07_ppml.R`) ; la **balance/SMD**
+sera construite à neuf dans `../06_descriptives_did/`. Conservé pour mémoire.
+
+| Fichier | Note |
+|---|---|
+| `07_validity.R` | Squelette §2 (balance, pré-tendances, HonestDiD), jamais implémenté. |
+| `07_report.md` | Stub de rapport associé. |
+
+> Sorties legacy de l'event study mondial : `../output_legacy/08_ppml/{figures,tables}/`
+> (`es_fig01_sunab_2014.png`, `tab_eventstudy_sunab.csv`, `tab_static_did.csv`, etc.).
 
 ## `iv_legacy/` — constructeur du panel IV (hors pipeline actif)
 Le code des familles d'instruments IV (distances + relations), extrait du
