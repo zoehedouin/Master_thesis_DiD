@@ -20,42 +20,54 @@
 
 ## Verdict de validité (jugé AVANT le résultat)
 1. **Balance / sorting** : densités brutes + carte 2×2 dans `06_descriptives_did` ;
-   SMD formel à construire là (hors `07`). Fait saillant de sorting : les
-   sanctionneurs sont concentrés en dépendance énergétique **moyenne/haute** (le
-   tercile **bas n'a aucun traité** — Sud global non-sanctionneur).
-2. **Pré-tendances (inconditionnelles)** — `tab_eventstudy_sunab.csv` : leads
-   k=−2,−3,−4 **plats et non significatifs** ; seul le **−5 binné** est positif
-   (+0.16, p<0.05) = léger blip de bord. Globalement rassurant.
-   **Conditionnelles à l'énergie** — `es_sunab_by_energy.png` / `tab_pretrends_conditional.csv` :
-   event study par tercile de dépendance énergétique pré-guerre (T2_mid, T3_high ;
-   T1_low sans traité) → vérifie que les leads tiennent *à dépendance comparable*.
-3. **HonestDiD (Rambachan & Roth 2023)** — `tab_honestdid_bounds.csv` :
-   **M̄ de rupture = 0.5** (relative magnitudes). L'effet survit à des violations
-   jusqu'à 0.5× les pré-tendances observées, mais l'IC inclut 0 dès M̄=1 →
-   **robustesse modérée** (à mentionner sans surinterpréter). Méthode : sensibilité
-   sur la représentation event-study TWFE (≈ Sun-Abraham vu la cohorte 2014 dominante).
+   SMD formel à construire là. Fait de sorting : les sanctionneurs sont concentrés
+   en dépendance énergétique **moyenne/haute** (tercile **bas sans aucun traité** —
+   Sud global non-sanctionneur).
+2. **Pré-tendances de l'event study** — fenêtre **PROPRE 2010-2021** (`es_sunab_russia.png`,
+   `tab_eventstudy_sunab.csv`, window=`2010_2021`) : hors crise 2008-09 et hors
+   guerre 2022-23 → **effet 2014 net**. Leads pré-onset plats. Version **secondaire
+   2008-2023** (`es_sunab_russia_fullwindow.png`) conservée pour transparence : le
+   bin +5 y **absorbe 2022-2023** (intensité → `08_dcdh`), d'où un ATT plus négatif.
+   **Conditionnelles à l'énergie** (`es_sunab_by_energy.png`, `tab_pretrends_conditional.csv`) :
+   par tercile (T2_mid, T3_high ; T1_low **sans traité**) sur la fenêtre propre →
+   pré-tendances à dépendance comparable.
+3. **HonestDiD (Rambachan & Roth 2023)** — `tab_honestdid_bounds.csv`, **reciblé sur
+   l'ATT** (moyenne post k≥+1, **pas k=0**) de la fenêtre propre. Contrôle de
+   cohérence **réussi** : IC à M̄=0 [−0.510 ; −0.345] ≡ IC de l'ATT cible
+   [−0.510 ; −0.345]. **M̄ de rupture = 0.5** → robustesse **modérée** (l'effet
+   survit à des violations jusqu'à 0.5× les pré-tendances, IC inclut 0 dès M̄=1).
+4. **Pré-tendances du résultat phare (2×2)** — `es_2x2_pretrends.png`,
+   `tab_2x2_pretrends.csv` (cellule × année, réf. 2021 × Neither) : pour
+   `b_condemn_only`, les coefficients **2016-2020 sont plats et n.s.** (−0.05 à
+   +0.08, tous p>0.27) → **pas de divergence pré-2022** ; l'effet apparaît en
+   **2022 (−0.31) et 2023 (−0.42)**. Le canal expressif a donc une pré-tendance propre.
 
 ## Résultat (lu APRÈS la validité)
 - **DiD statique** (`tab_static_did.csv`) : sanction non-commerciale dirigée →
-  **−0.58** sur le commerce avec la Russie (p<0.0001 ; −0.55 avec contrôle
-  `under_any_sanction`).
-- **Contraste par type** : non-commercial **−0.48** (p<0.001) ≫ commercial −0.07
-  (n.s.). NB : *inverse* du pattern mondial GSDB-R4 (commercial ≫ non-commercial),
-  car les sanctions sur la Russie sont **financières/non-commerciales** avec
-  exemptions énergétiques — résultat, pas artefact.
-- **Event study Sun & Abraham** : ATT agrégé **−0.60** (p<0.0001) ; effet croissant
-  de k=+1 (−0.26) à k=+5 (−0.89).
-- **2×2 condamne × sanctionne** (`tab_2x2_did.csv`, réf. = Neither-Russie,
-  × post-2022) : **canal expressif réel** —
+  **−0.58** (p<0.0001 ; −0.55 avec contrôle `under_any_sanction`).
+- **Contraste par type** : non-commercial **−0.48** (p<0.001) vs commercial −0.07
+  (n.s.). **Effectifs quasi identiques** (`tab_type_counts.csv` : 44 vs 43
+  partenaires, 802 vs 778 dyades-années) → le « commercial n.s. » **n'est PAS un
+  manque de puissance** mais reflète le **contenu** des sanctions sur la Russie
+  (mesures commerciales largement vidées par les exemptions énergétiques ;
+  l'hostilité mord par le canal financier/non-commercial).
+- **Event study (fenêtre propre 2010-2021)** : **ATT 2014 net = −0.40** (p<0.0001).
+  Version full 2008-2023 = −0.60 (caveat : conflate l'onset 2014 et
+  l'intensification 2022 ; cette dernière relève de `08_dcdh`).
+- **2×2 condamne × sanctionne** (`tab_2x2_did.csv`, réf. Neither-Russie × post-2022) :
   - Condamne + sanctionne : **−1.28** (p<10⁻¹¹) ;
-  - **Condamne seulement : −0.44** (p=0.028) → le commerce des condamneurs-seuls
-    baisse aussi après 2022 *sans* sanction matérielle = l'alignement a un effet
-    propre (l'IPD capte du réel) ;
-  - Ni l'un ni l'autre (hors-Russie) ≈ 0 (contrôle plat).
-  - Écart (a)−(b) ≈ **−0.84** = approximation de la part purement matérielle.
+  - **Condamne seulement : −0.44** (p=0.028) → **canal expressif réel** (le commerce
+    des condamneurs-seuls baisse aussi après 2022 *sans* sanction matérielle) ;
+  - Ni l'un ni l'autre (hors-Russie) ≈ 0 ; écart (a)−(b) ≈ **−0.84** = part matérielle ;
   - Cellule « sanctionne sans condamner » **vide** (post-KAZ Option B).
+- **Robustesse `align`** (`tab_2x2_did_align.csv`, réf. = **abstention ≈ Neither**) :
+  signes désormais **comparables** au 2×2 binaire — condamneurs (`yes`) × post2022 =
+  **−1.21** (p<10⁻¹²) = baisse, **même histoire** que le 2×2. (Le `+1.47` du run
+  précédent était une référence inversée, pas une contradiction : effectifs
+  yes=139, abstain=35, no/absent=16.) Les abstentionnistes (Chine/Inde) ressortent
+  comme bénéficiaires relatifs (réorientation du commerce russe — caveat tiers).
 
 ## À rédiger
-Interprétation économique du contraste expressif/matériel (cœur du mémoire),
-discussion de la robustesse modérée (M̄=0.5) et du caveat de pré-tendance au bord,
-et articulation avec l'intensité (`08_dcdh`) et la décomposition (`09_decomposition`).
+Interprétation économique du contraste expressif/matériel (cœur du mémoire), de
+l'effet 2014 net (−0.40) vs l'escalade 2022 (renvoyée à `08_dcdh`), de la robustesse
+modérée (M̄=0.5), et du canal financier (commercial vidé par l'énergie).

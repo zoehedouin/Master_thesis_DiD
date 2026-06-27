@@ -172,6 +172,16 @@ cat("\n  --- DiD statique + type (hors rta/ctrl) ---\n")
 print(static_csv[term %in% c("treated_post", "rus_tr", "rus_nt"),
                  .(model, term, est = round(estimate, 4), se = round(se, 4), p = round(p, 4))])
 
+# EFFECTIFS du contraste par type (dirige) : cadrer le "commercial n.s." (petit n ?).
+type_counts <- data.table(
+  type = c("non_commercial (rus_nt)", "commercial (rus_tr)"),
+  n_partners   = c(uniqueN(df[rus_dyad & rus_nt == 1L, partner]),
+                   uniqueN(df[rus_dyad & rus_tr == 1L, partner])),
+  n_dyad_years = c(df[rus_dyad & rus_nt == 1L, .N],
+                   df[rus_dyad & rus_tr == 1L, .N]))
+write_tab(type_counts, "tab_type_counts")
+cat("  - Effectifs contraste par type (dirige partenaire->RUS) :\n"); print(type_counts)
+
 
 # ---- Section 4 : 2x2 condamne x sanctionne autour de 2022 (bras ONU) ---------
 
@@ -205,103 +215,172 @@ cat("\n  --- 2x2 (cellule x post2022, ref = Neither-Russie) ---\n")
 print(tab_2x2[grepl("cell_2022", term),
               .(term, est = round(estimate, 4), se = round(se, 4), p = round(p, 4))])
 
-# Robustesse : align_2022 (abstention = condamnation partielle), si disponible.
+# Robustesse : align_2022 (yes=2, abstain=1, no/absent=0). REFERENCE = "1"
+# (abstention) car c'est le groupe qui correspond au "Neither" du 2x2 principal
+# (majoritairement des abstentionnistes : Chine, Inde...). Signes ainsi COMPARABLES
+# au 2x2 binaire (negatif = baisse de commerce vs la base non-condamnatrice).
 if ("align_2022" %in% names(cov)) {
   pp_al <- unique(cov[, .(partner = partner_iso3, align_2022)])[!is.na(align_2022)]
   d_al <- merge(df, pp_al, by = "partner", all.x = TRUE)
-  d_al[is.na(align_2022), align_2022 := -1L]   # non-Russie / inconnu = categorie a part
-  d_al[, align_f := factor(align_2022)]
-  m_align <- tryCatch(fepois(trade_value ~ i(align_f, post2022, ref = "0") + rta + under_any_sanction |
+  d_al[is.na(align_2022), align_2022 := -1L]   # non-Russie / inconnu = categorie a part (NR)
+  d_al[, align_f := factor(align_2022, levels = c(-1, 0, 1, 2),
+                           labels = c("NR", "no_absent", "abstain", "yes"))]
+  al_n <- d_al[rus_dyad == TRUE, .(n_partners = uniqueN(partner)), by = align_f][order(align_f)]
+  cat("  - Effectifs par niveau d'alignement (dyades-Russie) :\n"); print(al_n)
+  m_align <- tryCatch(fepois(trade_value ~ i(align_f, post2022, ref = "abstain") + rta + under_any_sanction |
                                exp_iso3^year + imp_iso3^year + pair, data = d_al, cluster = ~ pkey),
                       error = function(e) {cat("    align robustness skip:", conditionMessage(e), "\n"); NULL})
-  if (!is.null(m_align)) write_tab(extract_coefs(m_align, "did_2x2_align2022"), "tab_2x2_did_align")
+  if (!is.null(m_align)) {
+    al_tab <- extract_coefs(m_align, "did_2x2_align2022_ref_abstain")
+    write_tab(rbind(al_tab, al_n[, .(term = paste0("n_", align_f), estimate = n_partners,
+                    se = NA_real_, stat = NA_real_, p = NA_real_, model = "n_partners", N = NA_integer_)],
+                    fill = TRUE), "tab_2x2_did_align")
+    cat("  --- align (ref = abstain ~ Neither) ---\n")
+    print(al_tab[grepl("align_f", term), .(term, est = round(estimate,4), se = round(se,4), p = round(p,4))])
+  }
+}
+
+# --- Pre-tendances du 2x2 : event study cellule x annee (ref 2021 x Neither) --
+# Le 2x2 principal est un simple post2022 -> on teste ses PRE-TENDANCES : les
+# cellules-Russie interagies avec les annees. b_condemn_only x (2016-2020) doit
+# etre PLAT ~0 (pas de divergence pre-2022) ; 2022-2023 portent l'effet.
+log_step("Section 4b : pre-tendances du 2x2 (cellule x annee, ref 2021 x Neither).")
+d2 <- df[year >= 2016L & year <= 2023L]
+m_2x2_es <- tryCatch(fepois(trade_value ~ i(year, cell_2022, ref = 2021, ref2 = "d_neither") +
+                              rta + under_any_sanction | exp_iso3^year + imp_iso3^year + pair,
+                            data = d2, cluster = ~ pkey),
+                     error = function(e) {cat("    2x2 pretrends skip:", conditionMessage(e), "\n"); NULL})
+if (!is.null(m_2x2_es)) {
+  es2 <- as.data.table(coeftable(m_2x2_es), keep.rownames = "term"); setnames(es2, 2:5, c("estimate","se","stat","p"))
+  es2 <- es2[grepl("year::", term) & grepl("cell_2022::", term)]
+  es2[, yr := as.integer(sub(".*year::([0-9]+).*", "\\1", term))]
+  es2[, cell := sub(".*cell_2022::([a-z_]+).*", "\\1", term)]
+  es2[, `:=`(ci_lo = estimate - 1.96*se, ci_hi = estimate + 1.96*se)]; setorder(es2, cell, yr)
+  write_tab(es2[, .(cell, year = yr, estimate, se, ci_lo, ci_hi, p)], "tab_2x2_pretrends")
+  cat("  --- 2x2 pre-tendances (b_condemn_only, annees pre-2022 doivent etre ~0) ---\n")
+  print(es2[cell == "b_condemn_only", .(year = yr, est = round(estimate,4), se = round(se,4), p = round(p,4))])
+  p2t <- ggplot(es2[cell %in% c("a_both", "b_condemn_only")],
+                aes(yr, estimate, color = cell, fill = cell)) +
+    geom_hline(yintercept = 0, lty = 2, color = "grey50") +
+    geom_vline(xintercept = 2021.5, lty = 3, color = "grey60") +
+    geom_ribbon(aes(ymin = ci_lo, ymax = ci_hi), alpha = 0.12, color = NA) +
+    geom_line(linewidth = 0.6) + geom_point(size = 1.8) +
+    scale_x_continuous(breaks = 2016:2023) +
+    scale_color_manual(values = c(a_both = "#2166AC", b_condemn_only = "#B2182B")) +
+    scale_fill_manual(values = c(a_both = "#2166AC", b_condemn_only = "#B2182B")) +
+    theme_minimal(base_size = 12) +
+    theme(plot.title = element_text(face = "bold", size = 13),
+          plot.subtitle = element_text(size = 10, color = "grey40"), legend.position = "bottom",
+          plot.background = element_rect(fill = "white", color = NA),
+          panel.background = element_rect(fill = "white", color = NA)) +
+    labs(title = "Pre-tendances du 2x2 : commerce avec la Russie par cellule x annee",
+         subtitle = "Ref = 2021 x Neither. Coefs pre-2022 plats ~0 = pre-tendance OK ; 2022-2023 = effet.",
+         x = NULL, y = "Ecart au groupe Neither (log trade)", color = NULL, fill = NULL,
+         caption = "PPML 3-way FE, panel large, cluster paire. Cellules = condamne x sanctionne (post-KAZ).")
+  ggsave(file.path(PATH_FIG, "es_2x2_pretrends.png"), p2t, width = 10, height = 6, dpi = 300)
 }
 
 
-# ---- Section 5 : event study Sun & Abraham (pre-tendances) -------------------
+# ---- Section 5 : event study Sun & Abraham (fenetre PROPRE + full) -----------
 
-log_step("Section 5 : event study Sun & Abraham.")
-# Garder jamais-traites (cohort=10000) ; exclure left-censored in-window (onset
-# < YR_MIN+1, pas de rel_time=-1). Reduit le nombre de cohortes -> tractable.
-df_es <- df[cohort == 10000L | onset_year >= YR_MIN + 1L]
-rng <- range(df_es[ever == TRUE, rel_time])
-cat("  - obs event study :", nrow(df_es), "| cohortes traitees :",
-    uniqueN(df_es[ever == TRUE, cohort]), "| rel_time range :", paste(rng, collapse = " "), "\n")
-fml_es <- as.formula(sprintf(
-  "trade_value ~ sunab(cohort, year, bin.rel = list('-5' = %d:-5, '5' = 5:%d)) + rta | exp_iso3^year + imp_iso3^year + pair",
-  rng[1], rng[2]))
-tic(); m_es <- fepois(fml_es, data = df_es, cluster = ~ pkey)
-cat("    sunab:", toc(), "s | N =", nobs(m_es), "\n")
+log_step("Section 5 : event study Sun & Abraham (fenetre propre 2010-2021 + full 2008-2023).")
+# PRINCIPAL = fenetre 2010-2021 : exclut les leads de crise (2008-2009) ET les
+# lags de guerre (2022-2023, qui appartiennent a l'intensite -> 08_dcdh). Les
+# onsets hors fenetre deviennent CONTROLES ; left-censored (onset < y0+1) exclus.
+# => effet 2014 NET, non contamine. SECONDAIRE = 2008-2023 (transparence guerre).
+run_es <- function(y0, y1, blo, bhi, label) {
+  d <- df[year >= y0 & year <= y1]
+  d <- d[!(ever & onset_year < y0 + 1L)]                          # drop left-censored
+  d[, coh := fifelse(ever & onset_year <= y1, onset_year, 10000L)] # onset hors fenetre -> controle
+  d[, evc := coh != 10000L]
+  if (d[evc == TRUE, uniqueN(coh)] < 1L) return(NULL)
+  rg <- range(d[evc == TRUE, year - coh]); blo <- max(blo, rg[1]); bhi <- min(bhi, rg[2])
+  fml <- as.formula(sprintf(
+    "trade_value ~ sunab(coh, year, bin.rel = list('%d' = %d:%d, '%d' = %d:%d)) + rta | exp_iso3^year + imp_iso3^year + pair",
+    blo, rg[1], blo, bhi, bhi, rg[2]))
+  tic(); m <- fepois(fml, data = d, cluster = ~ pkey)
+  cat("    es", label, ":", toc(), "s | N =", nobs(m), "| cohortes :", d[evc==TRUE, uniqueN(coh)], "\n")
+  ac <- as.data.table(summary(m, agg = "att")$coeftable, keep.rownames = "term")
+  setnames(ac, 2:5, c("estimate","se","stat","p")); ac <- ac[term == "ATT"]
+  e <- as.data.table(coeftable(m), keep.rownames = "term"); setnames(e, 2:5, c("estimate","se","stat","p"))
+  e <- e[grepl("year::", term)]; e[, rel_time := as.integer(sub(".*year::(-?[0-9]+).*","\\1", term))]
+  e[, `:=`(ci_lo = estimate - 1.96*se, ci_hi = estimate + 1.96*se, window = label)]; setorder(e, rel_time)
+  list(model = m, es = e, att = ac, data = d)
+}
 
-att <- summary(m_es, agg = "att")$coeftable
-att_ct <- as.data.table(att, keep.rownames = "term"); setnames(att_ct, 2:5, c("estimate","se","stat","p"))
-att_ct <- att_ct[term == "ATT"]   # ne garder que l'ATT (pas la ligne rta)
-es <- as.data.table(coeftable(m_es), keep.rownames = "term"); setnames(es, 2:5, c("estimate","se","stat","p"))
-es <- es[grepl("year::", term)]
-es[, rel_time := as.integer(sub(".*year::(-?[0-9]+).*", "\\1", term))]
-es[, `:=`(ci_lo = estimate - 1.96*se, ci_hi = estimate + 1.96*se)]; setorder(es, rel_time)
-cat("\n  --- ATT agrege ---\n"); print(att_ct[, .(estimate = round(estimate,4), se = round(se,4), p = round(p,4))])
+es_clean <- run_es(2010L, 2021L, -4L, 6L, "2010_2021")   # PRINCIPAL (effet 2014 net)
+es_full  <- run_es(2008L, 2023L, -5L, 5L, "2008_2023")   # SECONDAIRE (avec guerre)
+stopifnot(!is.null(es_clean), !is.null(es_full))
+att_clean <- es_clean$att; att_full <- es_full$att
+cat(sprintf("\n  ATT 2014 PROPRE (2010-2021) : %.4f (p=%.4f) | ATT full (2008-2023, contamine guerre) : %.4f\n",
+            att_clean$estimate, att_clean$p, att_full$estimate))
+
+# Table : les deux fenetres etiquetees + lignes ATT.
 out_es <- rbindlist(list(
-  es[, .(term = "event_time", rel_time, estimate, se, ci_lo, ci_hi)],
-  att_ct[, .(term = "ATT", rel_time = NA_integer_, estimate, se,
-             ci_lo = estimate - 1.96*se, ci_hi = estimate + 1.96*se)]), use.names = TRUE)
+  es_clean$es[, .(window, term = "event_time", rel_time, estimate, se, ci_lo, ci_hi)],
+  es_full$es[,  .(window, term = "event_time", rel_time, estimate, se, ci_lo, ci_hi)],
+  att_clean[, .(window = "2010_2021", term = "ATT", rel_time = NA_integer_, estimate, se,
+                ci_lo = estimate-1.96*se, ci_hi = estimate+1.96*se)],
+  att_full[,  .(window = "2008_2023", term = "ATT", rel_time = NA_integer_, estimate, se,
+                ci_lo = estimate-1.96*se, ci_hi = estimate+1.96*se)]), use.names = TRUE)
 write_tab(out_es, "tab_eventstudy_sunab")
 
-p_es <- ggplot(es, aes(rel_time, estimate)) +
+mk_es_plot <- function(e, ttl, sub) ggplot(e, aes(rel_time, estimate)) +
   geom_hline(yintercept = 0, lty = 2, color = "grey50") +
   geom_vline(xintercept = -0.5, lty = 3, color = "grey60") +
   geom_ribbon(aes(ymin = ci_lo, ymax = ci_hi), alpha = 0.15, fill = "#2166AC") +
   geom_line(color = "#2166AC", linewidth = 0.6) + geom_point(color = "#2166AC", size = 2) +
-  scale_x_continuous(breaks = seq(-5, 5, 1)) +
+  scale_x_continuous(breaks = seq(-6, 9, 1)) +
   theme_minimal(base_size = 12) +
   theme(plot.title = element_text(face = "bold", size = 13),
         plot.subtitle = element_text(size = 10, color = "grey40"),
         plot.background = element_rect(fill = "white", color = NA),
         panel.background = element_rect(fill = "white", color = NA)) +
-  labs(title = "Sanctions non-commerciales contre la Russie : effet sur le commerce",
-       subtitle = "Event study Sun & Abraham (PPML 3-way FE, panel large). IC 95% cluster paire. k=0 = transition.",
-       x = "Temps relatif a l'onset (annees)", y = "Semi-elasticite (effet sur log trade)",
+  labs(title = ttl, subtitle = sub, x = "Temps relatif a l'onset (annees)",
+       y = "Semi-elasticite (effet sur log trade)",
        caption = "Source : BACI-CEPII, GSDB-R4. Traitement = partenaire sanctionne la Russie (dirige, non-commercial).")
-ggsave(file.path(PATH_FIG, "es_sunab_russia.png"), p_es, width = 10, height = 6, dpi = 300)
+ggsave(file.path(PATH_FIG, "es_sunab_russia.png"),
+       mk_es_plot(es_clean$es, "Sanctions non-commerciales contre la Russie : effet 2014 net (2010-2021)",
+                  "Event study Sun & Abraham (PPML 3-way FE). Fenetre PROPRE : hors crise 2008-09 et hors guerre 2022-23."),
+       width = 10, height = 6, dpi = 300)
+ggsave(file.path(PATH_FIG, "es_sunab_russia_fullwindow.png"),
+       mk_es_plot(es_full$es, "Effet sur le commerce avec la Russie (2008-2023, AVEC annees de guerre)",
+                  "SECONDAIRE : le bin +5 absorbe 2022-2023 (intensite -> 08_dcdh). A interpreter avec ce caveat."),
+       width = 10, height = 6, dpi = 300)
 
 
-# ---- Section 6 : pre-tendances CONDITIONNELLES a l'energie -------------------
+# ---- Section 6 : pre-tendances CONDITIONNELLES a l'energie (fenetre propre) ---
 
 log_step("Section 6 : pre-tendances conditionnelles a la dependance energetique.")
-# Tercile d'energie = exposition PRE-guerre (moyenne 2018-2021), fixe par
+# Tercile = exposition energetique PRE-guerre (moyenne 2018-2021), fixe par
 # partenaire. On NE met PAS l'energie en regresseur (absorbee par FE paire) :
-# on STRATIFIE l'event study par tercile et on verifie que les leads restent
-# plats dans chaque strate (pas pilote par le choc gazier differentiel de 2022).
+# on STRATIFIE l'event study (fenetre propre) par tercile -> leads plats par strate ?
 en_ref <- cov[, .(energy = mean(partner_energy_dep_rus[year %in% 2018:2021], na.rm = TRUE)),
               by = .(partner = partner_iso3)]
 en_ref <- en_ref[is.finite(energy)]
 en_ref[, terc := cut(energy, quantile(energy, c(0, 1/3, 2/3, 1), na.rm = TRUE),
                      labels = c("T1_low", "T2_mid", "T3_high"), include.lowest = TRUE)]
-df_es <- merge(df_es, en_ref[, .(partner, terc)], by = "partner", all.x = TRUE)
+dclean <- merge(es_clean$data, en_ref[, .(partner, terc)], by = "partner", all.x = TRUE)
 
 es_by <- list()
 for (k in c("T1_low", "T2_mid", "T3_high")) {
-  # treated du tercile k + tous les jamais-traites comme controles
-  dk <- df_es[cohort == 10000L | (ever == TRUE & terc == k)]
-  if (dk[ever == TRUE, uniqueN(cohort)] < 1L) next
-  rk <- range(dk[ever == TRUE, rel_time])
+  dk <- dclean[coh == 10000L | (evc == TRUE & terc == k)]
+  if (dk[evc == TRUE, uniqueN(coh)] < 1L) { cat("    tercile", k, ": aucun traite -> saute\n"); next }
+  rk <- range(dk[evc == TRUE, year - coh])
   fk <- as.formula(sprintf(
-    "trade_value ~ sunab(cohort, year, bin.rel = list('-5' = %d:-5, '5' = 5:%d)) + rta | exp_iso3^year + imp_iso3^year + pair",
-    rk[1], rk[2]))
+    "trade_value ~ sunab(coh, year, bin.rel = list('%d' = %d:%d, '%d' = %d:%d)) + rta | exp_iso3^year + imp_iso3^year + pair",
+    max(-4L, rk[1]), rk[1], max(-4L, rk[1]), min(6L, rk[2]), min(6L, rk[2]), rk[2]))
   mk <- tryCatch(fepois(fk, data = dk, cluster = ~ pkey),
                  error = function(e) {cat("    tercile", k, "skip:", conditionMessage(e), "\n"); NULL})
   if (is.null(mk)) next
   ek <- as.data.table(coeftable(mk), keep.rownames = "term"); setnames(ek, 2:5, c("estimate","se","stat","p"))
-  ek <- ek[grepl("year::", term)]
-  ek[, rel_time := as.integer(sub(".*year::(-?[0-9]+).*", "\\1", term))]
-  ek[, `:=`(tercile = k, ci_lo = estimate - 1.96*se, ci_hi = estimate + 1.96*se)]
-  es_by[[k]] <- ek
-  cat("    tercile", k, ": N =", nobs(mk), "| treated cohorts :", dk[ever==TRUE, uniqueN(cohort)], "\n")
+  ek <- ek[grepl("year::", term)]; ek[, rel_time := as.integer(sub(".*year::(-?[0-9]+).*","\\1", term))]
+  ek[, `:=`(tercile = k, ci_lo = estimate-1.96*se, ci_hi = estimate+1.96*se)]; es_by[[k]] <- ek
+  cat("    tercile", k, ": N =", nobs(mk), "| treated cohorts :", dk[evc==TRUE, uniqueN(coh)], "\n")
 }
 if (length(es_by)) {
   es_by <- rbindlist(es_by); setorder(es_by, tercile, rel_time)
-  # version inconditionnelle (rappel) pour comparaison
-  es_uncond <- copy(es[, .(rel_time, estimate, se, ci_lo, ci_hi)]); es_uncond[, tercile := "all (uncond.)"]
+  es_uncond <- copy(es_clean$es[, .(rel_time, estimate, se, ci_lo, ci_hi)]); es_uncond[, tercile := "all (uncond.)"]
   cond_tab <- rbind(es_by[, .(tercile, rel_time, estimate, se, ci_lo, ci_hi)], es_uncond)
   write_tab(cond_tab, "tab_pretrends_conditional")
   p_by <- ggplot(es_by, aes(rel_time, estimate, color = tercile, fill = tercile)) +
@@ -309,7 +388,7 @@ if (length(es_by)) {
     geom_vline(xintercept = -0.5, lty = 3, color = "grey60") +
     geom_ribbon(aes(ymin = ci_lo, ymax = ci_hi), alpha = 0.10, color = NA) +
     geom_line(linewidth = 0.6) + geom_point(size = 1.6) +
-    scale_x_continuous(breaks = seq(-5, 5, 1)) +
+    scale_x_continuous(breaks = seq(-4, 6, 1)) +
     scale_color_manual(values = c(T1_low = "#2166AC", T2_mid = "#999999", T3_high = "#B2182B")) +
     scale_fill_manual(values = c(T1_low = "#2166AC", T2_mid = "#999999", T3_high = "#B2182B")) +
     theme_minimal(base_size = 12) +
@@ -317,56 +396,63 @@ if (length(es_by)) {
           plot.subtitle = element_text(size = 10, color = "grey40"), legend.position = "bottom",
           plot.background = element_rect(fill = "white", color = NA),
           panel.background = element_rect(fill = "white", color = NA)) +
-    labs(title = "Event study par tercile de dependance energetique russe",
-         subtitle = "Pre-tendances a dependance energetique comparable (leads plats par strate ?)",
+    labs(title = "Event study par tercile de dependance energetique russe (fenetre propre)",
+         subtitle = "Pre-tendances a dependance comparable (leads plats par strate ?). T1_low : sanctionneurs absents.",
          x = "Temps relatif a l'onset (annees)", y = "Semi-elasticite", color = NULL, fill = NULL,
          caption = "Tercile = exposition energetique pre-guerre (moyenne 2018-2021), fixe par partenaire.")
   ggsave(file.path(PATH_FIG, "es_sunab_by_energy.png"), p_by, width = 10, height = 6, dpi = 300)
 } else cat("  !! Aucun tercile estimable.\n")
 
 
-# ---- Section 7 : HonestDiD (Rambachan & Roth 2023) --------------------------
+# ---- Section 7 : HonestDiD (Rambachan & Roth 2023), recible sur l'ATT --------
 
-log_step("Section 7 : HonestDiD (sensibilite sur les pre-tendances).")
+log_step("Section 7 : HonestDiD (sensibilite, RECIBLEE sur l'ATT post k>=+1).")
 hd_ok <- requireNamespace("HonestDiD", quietly = TRUE)
 if (!hd_ok) cat("  !! package HonestDiD indisponible : etape sautee (a installer).\n") else {
-  # NOTE TECHNIQUE : fixest sunab n'expose PAS la vcov agregee event-time
-  # (coeftable est agrege "year::k" mais vcov reste brut "year::k:cohort::c").
-  # HonestDiD exige betahat ET vcov coherents -> on l'applique a la REPRESENTATION
-  # event-study TWFE i(rel_time) (memes specs/echantillon que l'Etape 5), dont
-  # coef() et vcov() concordent. Vu la cohorte 2014 DOMINANTE (39/44 traites),
-  # cet event-study TWFE est quasi identique a Sun-Abraham -> sensibilite fidele.
-  # jamais-traites -> categorie de reference (-1) pour rester CONTROLES (sinon
-  # i() les droppe sur NA). Traites -> temps relatif binne a [-5, 5].
-  df_es[, rel_bin := ifelse(ever, pmax(-5L, pmin(5L, rel_time)), -1L)]
+  # fixest sunab n'expose pas la vcov agregee event-time -> on applique HonestDiD
+  # a la REPRESENTATION event-study TWFE i(rel) sur la FENETRE PROPRE 2010-2021
+  # (coef()/vcov() concordent ; cohorte 2014 dominante => ~ Sun-Abraham).
+  # CIBLE = l'ATT (moyenne des effets post k>=+1 ; PAS k=0 transition) via l_vec.
+  dh <- copy(es_clean$data)
+  dh[, rel_bin := ifelse(evc, pmax(-4L, pmin(6L, year - coh)), -1L)]  # never-treated -> ref
   m_twfe <- fepois(trade_value ~ i(rel_bin, ref = -1) + rta |
-                     exp_iso3^year + imp_iso3^year + pair, data = df_es, cluster = ~ pkey)
+                     exp_iso3^year + imp_iso3^year + pair, data = dh, cluster = ~ pkey)
   b_all <- coef(m_twfe); V_all <- vcov(m_twfe)
   ev <- grep("rel_bin::", names(b_all), value = TRUE)
   rt_h <- as.integer(sub(".*rel_bin::(-?[0-9]+).*", "\\1", ev)); ord <- order(rt_h)
   ev <- ev[ord]; rt_h <- rt_h[ord]
   betahat <- b_all[ev]; V <- V_all[ev, ev, drop = FALSE]
-  numPre  <- sum(rt_h < 0)
-  numPost <- sum(rt_h >= 0)
-  cat("  - event-study TWFE pour HonestDiD : numPre =", numPre, "| numPost =", numPost, "\n")
+  numPre  <- sum(rt_h < 0); numPost <- sum(rt_h >= 0)
+  postk <- rt_h[rt_h >= 0]
+  l_vec <- as.numeric(postk >= 1); l_vec <- if (sum(l_vec) > 0) l_vec / sum(l_vec) else rep(1/numPost, numPost)
+  cat("  - event-study TWFE (2010-2021) : numPre =", numPre, "| numPost =", numPost,
+      "| l_vec cible k>=1 (moyenne", sum(postk>=1), "periodes)\n")
+  # Controle de coherence : point + IC de l'estimand cible (l_vec' beta_post).
+  post_idx <- which(rt_h >= 0); bp <- betahat[post_idx]; Vp <- V[post_idx, post_idx, drop = FALSE]
+  att_point <- sum(l_vec * bp); att_se <- sqrt(as.numeric(t(l_vec) %*% Vp %*% l_vec))
+  cat(sprintf("  - ATT cible (TWFE, k>=1) : %.4f  IC95 [%.4f ; %.4f]\n",
+              att_point, att_point - 1.96*att_se, att_point + 1.96*att_se))
   hd <- tryCatch({
     rm_res <- HonestDiD::createSensitivityResults_relativeMagnitudes(
       betahat = betahat, sigma = V, numPrePeriods = numPre, numPostPeriods = numPost,
-      Mbarvec = seq(0, 2, by = 0.5))
+      l_vec = l_vec, Mbarvec = seq(0, 2, by = 0.5))
     sd_res <- HonestDiD::createSensitivityResults(
       betahat = betahat, sigma = V, numPrePeriods = numPre, numPostPeriods = numPost,
-      Mvec = seq(0, 0.3, by = 0.1))
+      l_vec = l_vec, Mvec = seq(0, 0.3, by = 0.1))
     list(rm = as.data.table(rm_res), sd = as.data.table(sd_res))
   }, error = function(e) {cat("  !! HonestDiD erreur :", conditionMessage(e), "\n"); NULL})
   if (!is.null(hd)) {
-    rm_dt <- hd$rm; rm_dt[, method := "relative_magnitudes"]
-    sd_dt <- hd$sd; sd_dt[, method := "smoothness"]
+    rm_dt <- hd$rm; rm_dt[, `:=`(method = "relative_magnitudes", estimand = "ATT_post_k>=1")]
+    sd_dt <- hd$sd; sd_dt[, `:=`(method = "smoothness", estimand = "ATT_post_k>=1")]
     hd_tab <- rbind(rm_dt, sd_dt, fill = TRUE)
     write_tab(hd_tab, "tab_honestdid_bounds")
-    # M-bar de rupture : plus grand Mbar ou la borne basse reste > 0 (ou haute < 0)
-    sig <- rm_dt[ (lb > 0 & ub > 0) | (lb < 0 & ub < 0) ]
+    # Controle de coherence M-bar=0 <-> IC de l'ATT cible
+    m0 <- rm_dt[Mbar == 0]
+    cat(sprintf("  - COHERENCE : HonestDiD M-bar=0 IC [%.4f ; %.4f] vs ATT cible IC [%.4f ; %.4f]\n",
+                m0$lb[1], m0$ub[1], att_point - 1.96*att_se, att_point + 1.96*att_se))
+    sig <- rm_dt[(lb > 0 & ub > 0) | (lb < 0 & ub < 0)]
     Mbreak <- if (nrow(sig)) max(sig$Mbar, na.rm = TRUE) else NA_real_
-    cat("  - M-bar de rupture (relative magnitudes) :", Mbreak, "\n")
+    cat("  - M-bar de rupture (recible ATT) :", Mbreak, "\n")
     p_hd <- ggplot(rm_dt, aes(Mbar)) +
       geom_hline(yintercept = 0, lty = 2, color = "grey50") +
       geom_ribbon(aes(ymin = lb, ymax = ub), alpha = 0.2, fill = "#2166AC") +
@@ -375,10 +461,10 @@ if (!hd_ok) cat("  !! package HonestDiD indisponible : etape sautee (a installer
       theme(plot.title = element_text(face = "bold", size = 13),
             plot.background = element_rect(fill = "white", color = NA),
             panel.background = element_rect(fill = "white", color = NA)) +
-      labs(title = "HonestDiD - sensibilite (relative magnitudes)",
-           subtitle = sprintf("Borne de rupture M-bar = %s (>=1 = robuste)", format(Mbreak)),
-           x = "M-bar (violation relative des pre-tendances)", y = "IC robuste de l'ATT",
-           caption = "Rambachan & Roth (2023). Sur l'event study Sun & Abraham de l'Etape 5.")
+      labs(title = "HonestDiD - sensibilite de l'ATT (post k>=+1, fenetre propre 2010-2021)",
+           subtitle = sprintf("Borne de rupture M-bar = %s (>=1 = robuste). Cible = ATT, pas k=0.", format(Mbreak)),
+           x = "M-bar (violation relative des pre-tendances)", y = "IC robuste de l'ATT (post k>=1)",
+           caption = "Rambachan & Roth (2023). Event-study TWFE (~ Sun-Abraham, cohorte 2014 dominante).")
     ggsave(file.path(PATH_FIG, "honestdid_sensitivity.png"), p_hd, width = 9, height = 6, dpi = 300)
   }
 }
@@ -401,7 +487,9 @@ cat("---- PUIS seulement l'effet ----\n")
 cat(sprintf("  Statique (treated_post)        : %.4f (p=%.4f)\n",
             static_csv[term=="treated_post" & model=="static_treated_post", estimate],
             static_csv[term=="treated_post" & model=="static_treated_post", p]))
-cat(sprintf("  ATT agrege (Sun-Abraham)       : %.4f (p=%.4f)\n", att_ct$estimate, att_ct$p))
+cat(sprintf("  ATT 2014 PROPRE (2010-2021)    : %.4f (p=%.4f)\n", att_clean$estimate, att_clean$p))
+cat(sprintf("  ATT full (2008-2023, guerre)   : %.4f (p=%.4f) [caveat : +5 absorbe 2022-23 -> 08_dcdh]\n",
+            att_full$estimate, att_full$p))
 cat("\n== Figures ==\n"); print(list.files(PATH_FIG))
 cat("== Tables ==\n");  print(list.files(PATH_TAB))
 log_step("07_ppml.R termine.")
