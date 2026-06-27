@@ -221,3 +221,26 @@ seuls des ajouts de variables + un flag d'isolation.
 - **Données** : `Data/Clean/iv_panel.parquet` périmé déplacé (`mv`) vers
   `Data/Clean/_archive/` ; backup `iv_panel_backup_20260624.parquet` intact.
 - Repro « 0 diff » des 4 colonnes sanctions préservée (logique GSDB non touchée).
+
+---
+
+# Réorg #5 — renumérotation (validité dissoute) + PPML legacy archivé
+
+Renumérotation `git mv` (historique préservé). La partie validité (`07_validity`,
+squelette jamais implémente) est DISSOUTE ; tout descend d'un cran.
+
+- **Archivé** : `08_ppml/08_ppml.R` → `_archive/fused_sources/08_ppml_legacy.R`
+  (event study MONDIAL pré-refonte, ATT mondial historique −0,265) ; ses sorties →
+  `_archive/output_legacy/08_ppml/` ; `07_validity/` → `_archive/validity_skeleton/`.
+- **Renommé** : `08_ppml`→`07_ppml` (réécrit à neuf, Russie-centré — EN COURS) ;
+  `09_dcdh`→`08_dcdh` ; `10_decomposition`→`09_decomposition` ;
+  `11_robustness`→`10_robustness` (scripts + reports + sorties).
+- **Renvois corrigés** : `PART` de chaque script, en-têtes, renvois inter-scripts,
+  `00_setup.R` (commentaires), `README_pipeline.md` (table, ordre, routage, archive),
+  `report_sanctions_synthese.md`, `VARIABLES.md`, `06_descriptives_did` (refs validité).
+- **Validité** : pré-tendances + HonestDiD → intégrés au PPML `07_ppml` ; balance/SMD
+  → à construire à neuf dans `06_descriptives_did` (tâche ultérieure).
+- **BLOCAGE PPML signalé** : la spec FE `exp^year+imp^year+pkey` est colinéaire sur le
+  panel Russie-centré (chaque partenaire dans 1 seule dyade) ; FE corrigés
+  `pkey + rus_as_exporter^year` testés OK. Réécriture de `07_ppml` en attente de
+  validation de la spec FE.

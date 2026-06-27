@@ -1,9 +1,9 @@
 # =============================================================================
-# 10_decomposition.R   (etape 5 — decomposition strategique / non-strategique)
+# 09_decomposition.R   (etape 5 — decomposition strategique / non-strategique)
 # -----------------------------------------------------------------------------
-# A FAIRE UNE FOIS un resultat propre obtenu sur le commerce TOTAL (08/09).
-# Re-tourne les MEILLEURES specs (event study PPML de 08_ppml.R + AVSQ paliers
-# de 09_dcdh.R) sur les deux outcomes decomposes du panel strategique (02) :
+# A FAIRE UNE FOIS un resultat propre obtenu sur le commerce TOTAL (07/08).
+# Re-tourne les MEILLEURES specs (event study PPML de 07_ppml.R + AVSQ paliers
+# de 08_dcdh.R) sur les deux outcomes decomposes du panel strategique (02) :
 #   * strategic_trade_value      (commerce strategique, HS6 — Aiyar et al. 2024)
 #   * non_strategic_trade        (= trade_value - strategic_trade_value)
 #
@@ -14,7 +14,7 @@
 # Contribution propre vs GSDB-R4 (qui declare ne pas pouvoir identifier les
 # secteurs touches par les sanctions commerciales partielles — possible ici via HS6).
 #
-# Output : 10_decomposition/tables/ , 10_decomposition/figures/
+# Output : 09_decomposition/tables/ , 09_decomposition/figures/
 # Entrees : master_panel_with_strategic.parquet (02), sanctions_panel.parquet (03).
 # Chemins / wrappers I/O / helpers : 00_setup.R.
 # =============================================================================
@@ -41,12 +41,12 @@ local({
     stop("00_setup.R introuvable en remontant depuis ", getwd())
   source(file.path(.d, "00_setup.R"))  # local=FALSE -> objets dans .GlobalEnv
 })  # PATH_*, wrappers, out_tab/out_fig, log_step/tic/toc
-PART <- "10_decomposition"   # co-localisation des sorties de cette partie (out_*)
+PART <- "09_decomposition"   # co-localisation des sorties de cette partie (out_*)
 
 PATH_TAB <- out_tab("Decomposition")
 PATH_FIG <- out_fig("Decomposition")
 
-log_step("10_decomposition : setup OK.")
+log_step("09_decomposition : setup OK.")
 
 df <- read_parquet_safe(PATH_STRATEGIC)
 stopifnot("strategic_trade_value" %in% names(df))
@@ -56,14 +56,14 @@ log_step(sprintf("panel strategique : %d lignes.", nrow(df)))
 
 ## TODO (feuille de route §5 — Decomposition strategique / non-strategique)
 ## ---------------------------------------------------------------------------
-## 1. RE-TOURNER l'event study PPML (Sun & Abraham, spec exacte de 08_ppml.R :
+## 1. RE-TOURNER l'event study PPML (Sun & Abraham, spec exacte de 07_ppml.R :
 ##    FE exp^year + imp^year + pair, cluster ~pair, zeros gardes) sur DEUX
 ##    outcomes separement : strategic_trade_value puis non_strategic_trade.
 ##    -> comparer les profils dynamiques (k=+1, +2, ...) entre les deux.
 ##
 ## 2. RE-TOURNER l'AVSQ did_multiplegt_dyn (paliers d'intensite 0/1/2-5/6+,
-##    spec de 09_dcdh.R, en logs) sur log(strategic+1) et log(non_strategic+1).
-##    Reutiliser pkey, fenetre, et l'option SAMPLE_CONTROLS de 09.
+##    spec de 08_dcdh.R, en logs) sur log(strategic+1) et log(non_strategic+1).
+##    Reutiliser pkey, fenetre, et l'option SAMPLE_CONTROLS de 08.
 ##
 ## 3. LIRE LE MECANISME :
 ##    - Tester l'hypothese "effet concentre sur le non-strategique/hors-energie".
@@ -72,11 +72,11 @@ log_step(sprintf("panel strategique : %d lignes.", nrow(df)))
 ##    - Optionnel : isoler l'energie (HS27) du reste du strategique.
 ##
 ## 4. SORTIES (table cote a cote strategique vs non-strategique) :
-##    - 10_decomposition/tables/tab_decomp_eventstudy.{csv,tex}
-##    - 10_decomposition/tables/tab_decomp_avsq.csv
-##    - 10_decomposition/figures/fig_decomp_eventstudy.png
+##    - 09_decomposition/tables/tab_decomp_eventstudy.{csv,tex}
+##    - 09_decomposition/tables/tab_decomp_avsq.csv
+##    - 09_decomposition/figures/fig_decomp_eventstudy.png
 ##
 ## Packages : fixest, DIDmultiplegtDYN, ggplot2, data.table, arrow.
-## NE RIEN INVENTER : squelette uniquement (re-utilise les specs validees de 08/09).
+## NE RIEN INVENTER : squelette uniquement (re-utilise les specs validees de 07/08).
 
-log_step("10_decomposition : squelette charge. Implementer apres resultat propre sur le total.")
+log_step("09_decomposition : squelette charge. Implementer apres resultat propre sur le total.")

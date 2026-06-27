@@ -7,9 +7,10 @@
 # par statut, calendrier du traitement (onset 2014 vs intensification 2022),
 # tableau croise du 2x2, distributions brutes des covariables par groupe.
 #
-# FRONTIERE AVEC 07 : ici on affiche des moyennes / densites / indices BRUTS,
+# FRONTIERE VALIDITE : ici on affiche des moyennes / densites / indices BRUTS,
 # sans standardiser et sans conclure. L'ecart standardise (SMD), le seuil
-# |SMD|>0.1 et le verdict de balance restent en 07_validity.
+# |SMD|>0.1 et le verdict de balance seront construits A NEUF ICI (06_descriptives_did,
+# tache ulterieure) ; les pre-tendances + HonestDiD vivent en 07_ppml.
 #
 # RUSSIE = CIBLE : on raisonne en partner_iso3 (le cote NON-russe). Le 2x2 et les
 # votes decrivent le PARTENAIRE. 2x2 principal = cell_2022_static.
