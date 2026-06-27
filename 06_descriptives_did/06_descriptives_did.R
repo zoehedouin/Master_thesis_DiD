@@ -425,6 +425,124 @@ safely("did_tab06", quote({
 }))
 
 
+# ---- Section 8b : balance / SMD calibree sur la capacite d'absorption --------
+# ICI on construit la balance standardisee FORMELLE (SMD, seuil |SMD|>0.1)
+# annoncee dans l'en-tete. Calibrage : tester si la cellule b_condemn_only differe
+# de d_neither sur les determinants de la CAPACITE D'ABSORPTION (taille, proximite,
+# demande pour les biens russes reorientes), independamment du vote ONU -> verrou
+# de l'interpretation du "-0.44" (canal expressif vs artefact d'absorption).
+# Unite = un partenaire par ligne, baseline pre-guerre 2018-2021. DESCRIPTIF.
+
+# Blocs de covariables (le groupe importe pour la lecture).
+BAL_A <- c(log_gdp = "log GDP", log_pop = "log population", gdp_pc = "GDP per capita",
+           log_dist = "log distance to Russia", reg_europe = "Region: Europe",
+           reg_asia = "Region: Asia", reg_africa = "Region: Africa",
+           reg_americas = "Region: Americas", reg_oceania = "Region: Oceania",
+           energy_dep = "Russian energy dependence", exposure_pre2014 = "Pre-2014 exposure to Russia",
+           non_strat_share = "Non-strategic trade share")
+BAL_B <- c(ipd = "Ideal-point distance to Russia", eu_member = "EU member",
+           nato_member = "NATO member", polyarchy = "Polyarchy (democracy)")
+BLOCK_OF <- c(setNames(rep("A. Absorption capacity", length(BAL_A)), names(BAL_A)),
+              setNames(rep("B. Western anchoring (descriptive)", length(BAL_B)), names(BAL_B)))
+
+# Table PAR PARTENAIRE des covariables de balance (collapse 2018-2021).
+balp <- cov[, {
+  cy <- year %in% REFYR
+  .(cell = as.character(cell_2022_static[1]),
+    sanctioner = as.integer(any(sanc_partner_to_rus == 1L, na.rm = TRUE)),
+    log_gdp = log(mean(partner_gdp[cy], na.rm = TRUE)),
+    log_pop = log(mean(partner_pop[cy], na.rm = TRUE)),
+    gdp_pc  = mean(partner_gdp_pc[cy], na.rm = TRUE),
+    log_dist = log(dist[1]),
+    region   = partner_region[1],
+    energy_dep = mean(partner_energy_dep_rus[cy], na.rm = TRUE),
+    exposure_pre2014 = exposure_rus_pre2014[1],
+    non_strat_share  = mean(non_strategic_share[cy], na.rm = TRUE),
+    ipd = mean(ipd[cy], na.rm = TRUE),
+    eu_member   = as.integer(any(pair_eu[cy] == "inter", na.rm = TRUE)),
+    nato_member = as.integer(any(pair_nato[cy] == "inter", na.rm = TRUE)),
+    polyarchy = mean(partner_polyarchy[cy], na.rm = TRUE))
+}, by = partner_iso3]
+for (r in c("Europe","Asia","Africa","Americas","Oceania"))
+  balp[, (paste0("reg_", tolower(r))) := as.integer(region == r)]
+for (v in c(names(BAL_A), names(BAL_B)))
+  balp[is.nan(get(v)), (v) := NA_real_]
+
+# SMD = (m1 - m2) / ecart-type poole ; NA si sd poolee nulle (ex. dummy constant).
+smd1 <- function(d, v, c1, c2, cellcol = "cell") {
+  x1 <- d[get(cellcol) == c1, get(v)]; x2 <- d[get(cellcol) == c2, get(v)]
+  ps <- sqrt((var(x1, na.rm = TRUE) + var(x2, na.rm = TRUE)) / 2)
+  if (!is.finite(ps) || ps == 0) return(NA_real_)
+  (mean(x1, na.rm = TRUE) - mean(x2, na.rm = TRUE)) / ps
+}
+flag_smd <- function(s) fifelse(is.na(s), "", fifelse(abs(s) > 0.25, ">0.25 strong",
+                         fifelse(abs(s) > 0.10, ">0.10 concern", "ok")))
+
+safely("did_balance_smd", quote({
+  log_step("did_balance_smd : balance standardisee 2x2 (b_condemn_only vs d_neither).")
+  vars <- c(names(BAL_A), names(BAL_B)); labs <- c(BAL_A, BAL_B)
+  bd <- balp[cell %in% c("a_both", "b_condemn_only", "d_neither")]
+  cat("  - effectifs cellules :", paste(sprintf("%s=%d", c("a_both","b_condemn_only","d_neither"),
+      c(bd[cell=="a_both",.N], bd[cell=="b_condemn_only",.N], bd[cell=="d_neither",.N])), collapse=" "), "\n")
+  tab <- rbindlist(lapply(vars, function(v) data.table(
+    block = BLOCK_OF[v], covariate = labs[v],
+    mean_condemn_sanction = mean(bd[cell=="a_both", get(v)], na.rm=TRUE),
+    mean_condemn_only     = mean(bd[cell=="b_condemn_only", get(v)], na.rm=TRUE),
+    mean_neither          = mean(bd[cell=="d_neither", get(v)], na.rm=TRUE),
+    smd_condemn_only_vs_neither = smd1(bd, v, "b_condemn_only", "d_neither"),
+    smd_both_vs_neither         = smd1(bd, v, "a_both", "d_neither"))))
+  tab[, flag_condemn_vs_neither := flag_smd(smd_condemn_only_vs_neither)]
+  setorder(tab, block)
+  write_tab(tab, "did_balance_smd", digits = 3,
+            caption = "Covariate balance across 2x2 cells (one partner per row, 2018-2021 baseline). SMD vs Neither, |SMD|>0.1 concern, >0.25 strong. Block A = absorption capacity; Block B = Western anchoring, DESCRIPTIVE ONLY (EU/NATO/IPD are quasi-collinear with treatment = bad controls, never used for conditioning).")
+
+  # Love plot : |SMD| par covariable, 2 contrastes, lignes 0.1 et 0.25, par bloc.
+  lp <- melt(tab, id.vars = c("block", "covariate"),
+             measure.vars = c("smd_condemn_only_vs_neither", "smd_both_vs_neither"),
+             variable.name = "contrast", value.name = "smd")
+  lp[, contrast := fifelse(contrast == "smd_condemn_only_vs_neither",
+                           "Condemns only vs Neither", "Condemns and sanctions vs Neither")]
+  lp[, abs_smd := abs(smd)]; lp <- lp[is.finite(abs_smd)]
+  ord <- tab[, .(covariate, block, k = abs(smd_condemn_only_vs_neither))]
+  ord[is.na(k), k := -1]; setorder(ord, block, k)
+  lp[, covariate := factor(covariate, levels = ord$covariate)]
+  p <- ggplot(lp, aes(abs_smd, covariate, color = contrast)) +
+    geom_vline(xintercept = 0.10, lty = 2, color = "grey55") +
+    geom_vline(xintercept = 0.25, lty = 3, color = "#B2182B") +
+    geom_point(size = 2.6, alpha = 0.85) +
+    facet_grid(block ~ ., scales = "free_y", space = "free_y") +
+    scale_color_manual(values = c("Condemns only vs Neither" = "#B2182B",
+                                  "Condemns and sanctions vs Neither" = "#2166AC")) +
+    labs(title = "Covariate balance across 2x2 cells: is 'Condemns only' comparable to 'Neither'?",
+         subtitle = "Absolute standardized mean difference. Lines at 0.10 (concern) and 0.25 (strong imbalance). Block A on top.",
+         x = "|SMD| (2018-2021 baseline, one partner per row)", y = NULL, color = NULL,
+         caption = "Block A = absorption-capacity confounders. Block B descriptive only (EU/NATO/IPD = bad controls). Payment infrastructure (CIPS/SPFS/swap lines) not measurable in the panel.") +
+    theme(legend.position = "bottom", strip.text = element_text(face = "bold", size = 9))
+  ggsave(file.path(PATH_FIG, "did_balance_love_plot.png"), p, width = 10, height = 7, dpi = 300)
+
+  # Verdict console : Bloc A avec |SMD|>0.25 pour le contraste phare.
+  hot <- tab[block == "A. Absorption capacity" & abs(smd_condemn_only_vs_neither) > 0.25,
+             .(covariate, smd = round(smd_condemn_only_vs_neither, 2))]
+  cat("  >> Bloc A (absorption), |SMD|>0.25 pour 'Condemns only vs Neither' :\n")
+  if (nrow(hot)) print(hot) else cat("     aucune -> Bloc A globalement equilibre.\n")
+}))
+
+safely("did_balance_smd_sanctioner", quote({
+  log_step("did_balance_smd_sanctioner : sorting sanctionneur vs non (justifie panel large).")
+  vars <- c(names(BAL_A), names(BAL_B)); labs <- c(BAL_A, BAL_B)
+  bs <- balp[!is.na(sanctioner)]; bs[, sanc_g := as.character(sanctioner)]
+  tab <- rbindlist(lapply(vars, function(v) data.table(
+    block = BLOCK_OF[v], covariate = labs[v],
+    mean_sanctioner     = mean(bs[sanctioner == 1L, get(v)], na.rm = TRUE),
+    mean_non_sanctioner = mean(bs[sanctioner == 0L, get(v)], na.rm = TRUE),
+    smd_sanctioner_vs_non = smd1(bs, v, "1", "0", cellcol = "sanc_g"))))
+  tab[, flag := flag_smd(smd_sanctioner_vs_non)]
+  setorder(tab, block)
+  write_tab(tab, "did_balance_smd_sanctioner", digits = 3,
+            caption = "Sorting: sanctioners vs non-sanctioners (one partner per row, 2018-2021). Documents the classic selection (sanctioners ~ EU/NATO/rich/close) that motivates the large panel + multilateral-resistance FE.")
+}))
+
+
 # ---- Section 9 : cloture ----------------------------------------------------
 
 log_step("Section 9 : recapitulatif.")
