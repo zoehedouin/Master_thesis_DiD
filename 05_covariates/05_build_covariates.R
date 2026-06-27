@@ -149,6 +149,26 @@ stopifnot(base[partner_iso3 == "RUS", .N] == 0L)   # jamais RUS<->RUS
 # Joindre polyarchy (niveau) + sanc_partner_to_rus (flag DIRIGE) depuis sanctions_panel
 base <- merge(base, sanc, by = c("exp_iso3", "imp_iso3", "year"), all.x = TRUE)
 
+# --- Recodage definitionnel (Option B) : Kazakhstan = NON-sanctionneur -------
+# UNIQUE point de recodage du pipeline (03 reste fidele a GSDB : donnee intacte).
+# L'unique cas GSDB KAZ->RUS est case_id 1519 (sender=KAZ, target=RUS, 2023,
+# trade exp_part) : une mesure ANTI-CONTOURNEMENT a l'export, PAS une sanction
+# coercitive autonome de la Russie. Decision de definition : on ne la compte pas
+# comme "le partenaire sanctionne la Russie". Coherent avec l'abstention du KAZ
+# aux votes ONU (A/RES/68/262 2014 ; ES-11/1 2022) et son refus public de
+# rejoindre la coalition occidentale. -> KAZ passe de (c) "sanctionne sans
+# condamner" a (d) "ni l'un ni l'autre" ; la cellule (c) devient vide.
+# Cible PRECISE : la dyade-annee (KAZ, RUS, 2023) qui porte le case 1519 (les
+# deux sens de trade), PAS un drop aveugle de tous les KAZ.
+# Robustesse : passer EXCLUDE_KAZ_ANTICIRCUMVENTION a FALSE re-genere la version
+# FIDELE GSDB (KAZ inclus comme sanctionneur), pour documenter l'invariance.
+EXCLUDE_KAZ_ANTICIRCUMVENTION <- TRUE
+if (EXCLUDE_KAZ_ANTICIRCUMVENTION) {
+  n_kaz <- base[partner_iso3 == "KAZ" & year == 2023L & sanc_partner_to_rus == 1L, .N]
+  base[partner_iso3 == "KAZ" & year == 2023L, sanc_partner_to_rus := 0L]
+  log_step(sprintf("Option B : KAZ reclasse non-sanctionneur (case 1519 ; %d ligne(s) (KAZ,2023) remises a 0).", n_kaz))
+}
+
 # Versions "partner_*" : cote NON-russe (energie, polyarchy, PIB, pop)
 pick <- function(exp_col, imp_col) fifelse(base$rus_as_exporter,
                                            base[[imp_col]], base[[exp_col]])
