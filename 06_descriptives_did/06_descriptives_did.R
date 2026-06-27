@@ -449,11 +449,6 @@ BLOCK_OF <- c(setNames(rep("A. Absorption capacity", length(BAL_A)), names(BAL_A
 balp <- cov[, {
   cy <- year %in% REFYR
   .(cell = as.character(cell_2022_static[1]),
-    sanctioner = as.integer(any(sanc_partner_to_rus == 1L, na.rm = TRUE)),
-    sanc_2014 = as.integer(sanctioned_post2014[1]),
-    sanc_2022 = as.integer(sanctioned_post2022[1]),
-    cond_2014 = as.integer(condemn_2014[1]),
-    cond_2022 = as.integer(condemn_2022[1]),
     log_gdp = log(mean(partner_gdp[cy], na.rm = TRUE)),
     log_pop = log(mean(partner_pop[cy], na.rm = TRUE)),
     gdp_pc  = mean(partner_gdp_pc[cy], na.rm = TRUE),
@@ -515,68 +510,20 @@ safely("did_balance_smd", quote({
   show_hot("smd_both_vs_condemn_only",    "'Condemns and sanctions vs Condemns only'")
 }))
 
-safely("did_balance_smd_sanctioner", quote({
-  log_step("did_balance_smd_sanctioner : sorting sanctionneur vs non (justifie panel large).")
-  vars <- c(names(BAL_A), names(BAL_B)); labs <- c(BAL_A, BAL_B)
-  bs <- balp[!is.na(sanctioner)]; bs[, sanc_g := as.character(sanctioner)]
-  tab <- rbindlist(lapply(vars, function(v) data.table(
-    block = BLOCK_OF[v], covariate = labs[v],
-    mean_sanctioner     = mean(bs[sanctioner == 1L, get(v)], na.rm = TRUE),
-    mean_non_sanctioner = mean(bs[sanctioner == 0L, get(v)], na.rm = TRUE),
-    smd_sanctioner_vs_non = smd1(bs, v, "1", "0", cellcol = "sanc_g"))))
-  tab[, flag := flag_smd(smd_sanctioner_vs_non)]
-  setorder(tab, block)
-  write_tab(tab, "did_balance_smd_sanctioner", digits = 3,
-            caption = "Sorting: sanctioners vs non-sanctioners (one partner per row, 2018-2021). Documents the classic selection (sanctioners ~ EU/NATO/rich/close) that motivates the large panel + multilateral-resistance FE.")
-}))
-
-safely("did_balance_smd_new2022", quote({
-  log_step("did_balance_smd_new2022 : balance des cohortes ajoutees en 2022 (tables seules).")
-  vars <- c(names(BAL_A), names(BAL_B)); labs <- c(BAL_A, BAL_B)
-  coh <- list(
-    new_sanc   = balp[sanc_2022 == 1L & sanc_2014 == 0L],
-    vint_sanc  = balp[sanc_2014 == 1L],
-    never_sanc = balp[sanc_2022 == 0L],
-    new_cond   = balp[cond_2022 == 1L & cond_2014 == 0L],
-    vint_cond  = balp[cond_2014 == 1L],
-    never_cond = balp[cond_2022 == 0L])
-  ncoh <- vapply(coh, nrow, integer(1))
-  cat("  - effectifs cohortes :", paste(sprintf("%s=%d", names(ncoh), ncoh), collapse = " "), "\n")
-  small <- names(ncoh)[ncoh > 0 & ncoh < 10]
-  empty <- names(ncoh)[ncoh == 0]
-  if (length(empty)) cat("  !! cohorte VIDE :", paste(empty, collapse = ", "),
-      "-> contrastes associes = NA. (new_sanc vide = AUCUN nouvel Etat sanctionneur en 2022",
-      ": 2022 = intensification, pas onset ; l'heterogeneite vit dans l'intensite -> 08_dcdh.)\n")
-  if (length(small)) cat("  !! cohortes < 10 partenaires (SMD instable, lire avec prudence) :",
-      paste(small, collapse = ", "), "\n")
-  # SMD entre deux sous-ensembles ; NA si un groupe est vide ou sd poolee nulle.
-  smd_pair <- function(d1, d2, v) {
-    if (nrow(d1) == 0L || nrow(d2) == 0L) return(NA_real_)
-    ps <- sqrt((var(d1[[v]], na.rm = TRUE) + var(d2[[v]], na.rm = TRUE)) / 2)
-    if (!is.finite(ps) || ps == 0) return(NA_real_)
-    (mean(d1[[v]], na.rm = TRUE) - mean(d2[[v]], na.rm = TRUE)) / ps
-  }
-  tab <- rbindlist(lapply(vars, function(v) data.table(
-    block = BLOCK_OF[v], covariate = labs[v],
-    smd_newSanc_vs_never    = smd_pair(coh$new_sanc, coh$never_sanc, v),
-    smd_newSanc_vs_vint2014 = smd_pair(coh$new_sanc, coh$vint_sanc,  v),
-    smd_newCond_vs_never    = smd_pair(coh$new_cond, coh$never_cond, v),
-    smd_newCond_vs_vint2014 = smd_pair(coh$new_cond, coh$vint_cond,  v))))
-  for (cc in c("smd_newSanc_vs_never","smd_newSanc_vs_vint2014","smd_newCond_vs_never","smd_newCond_vs_vint2014"))
-    tab[, (paste0("flag_", sub("smd_", "", cc))) := flag_smd(get(cc))]
-  setorder(tab, block)
-  cap <- sprintf(paste0("Balance of the 2022-added cohorts (one partner per row, 2018-2021 baseline). ",
-    "Cohort sizes: new-2022 sanctioners=%d (EMPTY: no new sanctioner state in 2022 => intensification, not onset), ",
-    "2014-vintage sanctioners=%d, never-sanctioners=%d, new-2022 condemners=%d, 2014-vintage condemners=%d, ",
-    "never-condemners=%d. Block A absorption, Block B Western anchoring (descriptive). |SMD|>0.1 concern, >0.25 strong."),
-    ncoh["new_sanc"], ncoh["vint_sanc"], ncoh["never_sanc"], ncoh["new_cond"], ncoh["vint_cond"], ncoh["never_cond"])
-  write_tab(tab, "did_balance_smd_new2022", digits = 3, caption = cap)
-  # Apercu console : nouveaux condamneurs 2022 vs jamais (Bloc A, |SMD|>0.25).
-  hc <- tab[block == "A. Absorption capacity" & abs(smd_newCond_vs_never) > 0.25,
-            .(covariate, smd = round(smd_newCond_vs_never, 2))]
-  cat("  >> New 2022 condemners vs never-condemners, Bloc A |SMD|>0.25 :\n")
-  if (nrow(hc)) print(hc) else cat("     aucune -> Bloc A equilibre.\n")
-}))
+# NOTE -- deux tables de balance volontairement RETIREES (findings consignes ici).
+#
+# 1) "sanctionneur vs non" : redondante avec les contrastes du 2x2 ci-dessus
+#    (did_balance_smd). a_both vs d_neither et a_both vs b_condemn_only montrent
+#    deja que les sanctionneurs sont plus gros / riches / proches / UE-OTAN.
+#
+# 2) "cohortes ajoutees en 2022" : verifie en amont sur les donnees, il n'y a
+#    AUCUN nouvel Etat sanctionneur en 2022. La cohorte
+#    (sanctioned_post2022 == 1 & sanctioned_post2014 == 0) est VIDE : les 43
+#    sanctionneurs de 2022 sont EXACTEMENT ceux de 2014. => Cote sanctions,
+#    2022 = INTENSIFICATION (plus de mesures par les memes pays), PAS un nouvel
+#    onset ; l'heterogeneite de cohorte est une question d'INTENSITE -> 08_dcdh.
+#    (Cote condamnation, la vague 2022 ajoute ~47 nouveaux condamneurs, pays plus
+#    petits / lointains que les condamneurs de 2014 ; non tabule ici.)
 
 
 # ---- Section 9 : cloture ----------------------------------------------------
