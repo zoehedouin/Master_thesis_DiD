@@ -199,6 +199,26 @@ df[, cell_2022 := factor(cell_2022,
 df[, cell_2022 := droplevels(cell_2022)]   # retire c_sanction_only (vide, post-KAZ)
 df[, post2022 := as.integer(year >= 2022L)]
 
+# Cellule Crimee 2014 (vote Res 68/262 x statut de sanction) -> 2x2 confondeur.
+pp_cell14 <- unique(cov[, .(partner = partner_iso3, cell_2014 = as.character(cell_2014_static))])
+pp_cell14 <- pp_cell14[!is.na(cell_2014)]
+df <- merge(df, pp_cell14, by = "partner", all.x = TRUE)
+df[is.na(cell_2014), cell_2014 := "non_russia"]
+df[, cell_2014 := factor(cell_2014,
+     levels = c("d_neither", "a_both", "b_condemn_only", "c_sanction_only", "non_russia"))]
+df[, cell_2014 := droplevels(cell_2014)]
+
+# Dictionnaire de libelles ANGLAIS (defini une fois, applique partout dans les figures).
+LBL_CELL <- c(a_both = "Condemns and sanctions", b_condemn_only = "Condemns only",
+              c_sanction_only = "Sanctions only", d_neither = "Neither condemns nor sanctions",
+              non_russia = "Rest of world (control)")
+COL_CELL <- c("Condemns and sanctions" = "#2166AC", "Condemns only" = "#B2182B")
+LBL_TERC <- c(T1_low = "Low energy dependence", T2_mid = "Medium energy dependence",
+              T3_high = "High energy dependence")
+COL_TERC <- c("Low energy dependence" = "#2166AC", "Medium energy dependence" = "#999999",
+              "High energy dependence" = "#B2182B")
+Y_ES <- "Effect on bilateral trade with Russia (semi-elasticity)"
+
 cell_n <- df[rus_dyad == TRUE, .(n_partner_years = .N,
                                  n_partners = uniqueN(partner)), by = cell_2022][order(cell_2022)]
 cat("  - Effectifs par cellule (dyades-Russie) :\n"); print(cell_n)
@@ -240,45 +260,62 @@ if ("align_2022" %in% names(cov)) {
   }
 }
 
-# --- Pre-tendances du 2x2 : event study cellule x annee (ref 2021 x Neither) --
-# Le 2x2 principal est un simple post2022 -> on teste ses PRE-TENDANCES : les
-# cellules-Russie interagies avec les annees. b_condemn_only x (2016-2020) doit
-# etre PLAT ~0 (pas de divergence pre-2022) ; 2022-2023 portent l'effet.
-log_step("Section 4b : pre-tendances du 2x2 (cellule x annee, ref 2021 x Neither).")
-d2 <- df[year >= 2016L & year <= 2023L]
-m_2x2_es <- tryCatch(fepois(trade_value ~ i(year, cell_2022, ref = 2021, ref2 = "d_neither") +
-                              rta + under_any_sanction | exp_iso3^year + imp_iso3^year + pair,
-                            data = d2, cluster = ~ pkey),
-                     error = function(e) {cat("    2x2 pretrends skip:", conditionMessage(e), "\n"); NULL})
-if (!is.null(m_2x2_es)) {
-  es2 <- as.data.table(coeftable(m_2x2_es), keep.rownames = "term"); setnames(es2, 2:5, c("estimate","se","stat","p"))
-  es2 <- es2[grepl("year::", term) & grepl("cell_2022::", term)]
-  es2[, yr := as.integer(sub(".*year::([0-9]+).*", "\\1", term))]
-  es2[, cell := sub(".*cell_2022::([a-z_]+).*", "\\1", term)]
-  es2[, `:=`(ci_lo = estimate - 1.96*se, ci_hi = estimate + 1.96*se)]; setorder(es2, cell, yr)
-  write_tab(es2[, .(cell, year = yr, estimate, se, ci_lo, ci_hi, p)], "tab_2x2_pretrends")
-  cat("  --- 2x2 pre-tendances (b_condemn_only, annees pre-2022 doivent etre ~0) ---\n")
-  print(es2[cell == "b_condemn_only", .(year = yr, est = round(estimate,4), se = round(se,4), p = round(p,4))])
-  p2t <- ggplot(es2[cell %in% c("a_both", "b_condemn_only")],
-                aes(yr, estimate, color = cell, fill = cell)) +
+# --- Pre-tendances du 2x2 : event study cellule x annee (deux episodes) --------
+# Helper : interagit les cellules-Russie avec les annees (ref = refyr x Neither).
+# "Condemns only" sur les annees pre-traitement doit etre PLAT ~0 (pre-tendance OK).
+log_step("Section 4b : pre-tendances du 2x2 (Ukraine 2022 + Crimee 2014).")
+run_2x2_pretrends <- function(cellvar, refyr, y0, y1, figname, tabname, ttl, sub) {
+  dd <- df[year >= y0 & year <= y1]
+  fml <- as.formula(sprintf(
+    "trade_value ~ i(year, %s, ref = %d, ref2 = 'd_neither') + rta + under_any_sanction | exp_iso3^year + imp_iso3^year + pair",
+    cellvar, refyr))
+  m <- tryCatch(fepois(fml, data = dd, cluster = ~ pkey),
+                error = function(e) {cat("    2x2 pretrends", cellvar, "skip:", conditionMessage(e), "\n"); NULL})
+  if (is.null(m)) return(NULL)
+  e <- as.data.table(coeftable(m), keep.rownames = "term"); setnames(e, 2:5, c("estimate","se","stat","p"))
+  e <- e[grepl("year::", term) & grepl(sprintf("%s::", cellvar), term)]
+  e[, yr := as.integer(sub(".*year::([0-9]+).*", "\\1", term))]
+  e[, cell := sub(sprintf(".*%s::([a-z_]+).*", cellvar), "\\1", term)]
+  e[, `:=`(ci_lo = estimate - 1.96*se, ci_hi = estimate + 1.96*se)]; setorder(e, cell, yr)
+  write_tab(e[, .(cell, year = yr, estimate, se, ci_lo, ci_hi, p)], tabname)
+  cat(sprintf("  --- %s : 'Condemns only' (annees pre-traitement doivent etre ~0) ---\n", cellvar))
+  print(e[cell == "b_condemn_only", .(year = yr, est = round(estimate,4), se = round(se,4), p = round(p,4))])
+  ep <- e[cell %in% c("a_both", "b_condemn_only")]
+  ep[, cell_lbl := factor(LBL_CELL[cell], levels = c("Condemns and sanctions", "Condemns only"))]
+  p <- ggplot(ep, aes(yr, estimate, color = cell_lbl, fill = cell_lbl)) +
     geom_hline(yintercept = 0, lty = 2, color = "grey50") +
-    geom_vline(xintercept = 2021.5, lty = 3, color = "grey60") +
+    geom_vline(xintercept = refyr + 0.5, lty = 3, color = "grey60") +
     geom_ribbon(aes(ymin = ci_lo, ymax = ci_hi), alpha = 0.12, color = NA) +
     geom_line(linewidth = 0.6) + geom_point(size = 1.8) +
-    scale_x_continuous(breaks = 2016:2023) +
-    scale_color_manual(values = c(a_both = "#2166AC", b_condemn_only = "#B2182B")) +
-    scale_fill_manual(values = c(a_both = "#2166AC", b_condemn_only = "#B2182B")) +
+    scale_x_continuous(breaks = seq(y0, y1, 1)) +
+    scale_color_manual(values = COL_CELL) + scale_fill_manual(values = COL_CELL) +
     theme_minimal(base_size = 12) +
     theme(plot.title = element_text(face = "bold", size = 13),
           plot.subtitle = element_text(size = 10, color = "grey40"), legend.position = "bottom",
           plot.background = element_rect(fill = "white", color = NA),
           panel.background = element_rect(fill = "white", color = NA)) +
-    labs(title = "Pre-tendances du 2x2 : commerce avec la Russie par cellule x annee",
-         subtitle = "Ref = 2021 x Neither. Coefs pre-2022 plats ~0 = pre-tendance OK ; 2022-2023 = effet.",
-         x = NULL, y = "Ecart au groupe Neither (log trade)", color = NULL, fill = NULL,
-         caption = "PPML 3-way FE, panel large, cluster paire. Cellules = condamne x sanctionne (post-KAZ).")
-  ggsave(file.path(PATH_FIG, "es_2x2_pretrends.png"), p2t, width = 10, height = 6, dpi = 300)
+    labs(title = ttl, subtitle = sub, x = "Year", y = Y_ES, color = NULL, fill = NULL,
+         caption = "PPML with exporter-year, importer-year and pair fixed effects; pair-clustered SE. Cells = UN condemnation x sanction status.")
+  ggsave(file.path(PATH_FIG, paste0(figname, ".png")), p, width = 10, height = 6, dpi = 300)
+  m
 }
+
+# Ukraine 2022 (vote ES-11/1) : reference 2021, fenetre 2016-2023. m_2x2_es sert
+# aussi a la borne HonestDiD du phare (Section 7).
+m_2x2_es <- run_2x2_pretrends(
+  "cell_2022", 2021L, 2016L, 2023L,
+  "condemnation_2x2_pretrends_ukraine", "tab_2x2_pretrends_2022",
+  "Pre-trends of the 2022 condemnation 2x2 (trade with Russia)",
+  "Reference 2021 x Neither. Pre-2022 coefficients flat ~0 (clean pre-trend); 2022-2023 carry the effect.")
+
+# Crimee 2014 (vote Res 68/262) : reference 2013, fenetre PROPRE 2010-2021.
+# Test du confondeur : 'Condemns only' decroche-t-il deja apres 2014, AVANT le boom
+# d'absorption post-2022 du groupe Neither (Chine/Inde) ?
+run_2x2_pretrends(
+  "cell_2014", 2013L, 2010L, 2021L,
+  "condemnation_2x2_pretrends_crimea", "tab_2x2_pretrends_2014",
+  "Pre-trends of the 2014 Crimea condemnation 2x2 (trade with Russia)",
+  "Reference 2013 x Neither. Confounder test: does 'Condemns only' break after 2014, before the post-2022 rerouting?")
 
 
 # ---- Section 5 : event study Sun & Abraham (fenetre PROPRE + full) -----------
@@ -336,16 +373,15 @@ mk_es_plot <- function(e, ttl, sub) ggplot(e, aes(rel_time, estimate)) +
         plot.subtitle = element_text(size = 10, color = "grey40"),
         plot.background = element_rect(fill = "white", color = NA),
         panel.background = element_rect(fill = "white", color = NA)) +
-  labs(title = ttl, subtitle = sub, x = "Temps relatif a l'onset (annees)",
-       y = "Semi-elasticite (effet sur log trade)",
-       caption = "Source : BACI-CEPII, GSDB-R4. Traitement = partenaire sanctionne la Russie (dirige, non-commercial).")
-ggsave(file.path(PATH_FIG, "es_sunab_russia.png"),
-       mk_es_plot(es_clean$es, "Sanctions non-commerciales contre la Russie : effet 2014 net (2010-2021)",
-                  "Event study Sun & Abraham (PPML 3-way FE). Fenetre PROPRE : hors crise 2008-09 et hors guerre 2022-23."),
+  labs(title = ttl, subtitle = sub, x = "Years relative to sanction onset", y = Y_ES,
+       caption = "Source: BACI-CEPII, GSDB-R4. Treatment = partner imposes non-commercial sanctions on Russia (directed). 95% CI, pair-clustered.")
+ggsave(file.path(PATH_FIG, "sanctions_event_study.png"),
+       mk_es_plot(es_clean$es, "Non-commercial sanctions on Russia: net 2014 effect on trade (2010-2021)",
+                  "Sun & Abraham event study (PPML, three-way FE). Clean window: excludes the 2008-09 crisis and the 2022-23 war."),
        width = 10, height = 6, dpi = 300)
-ggsave(file.path(PATH_FIG, "es_sunab_russia_fullwindow.png"),
-       mk_es_plot(es_full$es, "Effet sur le commerce avec la Russie (2008-2023, AVEC annees de guerre)",
-                  "SECONDAIRE : le bin +5 absorbe 2022-2023 (intensite -> 08_dcdh). A interpreter avec ce caveat."),
+ggsave(file.path(PATH_FIG, "sanctions_event_study_full_window.png"),
+       mk_es_plot(es_full$es, "Effect on trade with Russia (2008-2023, including the war years)",
+                  "Secondary view: the +5 bin absorbs 2022-2023 (intensification -> 08_dcdh). Read with this caveat."),
        width = 10, height = 6, dpi = 300)
 
 
@@ -383,24 +419,24 @@ if (length(es_by)) {
   es_uncond <- copy(es_clean$es[, .(rel_time, estimate, se, ci_lo, ci_hi)]); es_uncond[, tercile := "all (uncond.)"]
   cond_tab <- rbind(es_by[, .(tercile, rel_time, estimate, se, ci_lo, ci_hi)], es_uncond)
   write_tab(cond_tab, "tab_pretrends_conditional")
-  p_by <- ggplot(es_by, aes(rel_time, estimate, color = tercile, fill = tercile)) +
+  es_by[, terc_lbl := factor(LBL_TERC[tercile], levels = LBL_TERC[c("T2_mid", "T3_high")])]
+  p_by <- ggplot(es_by, aes(rel_time, estimate, color = terc_lbl, fill = terc_lbl)) +
     geom_hline(yintercept = 0, lty = 2, color = "grey50") +
     geom_vline(xintercept = -0.5, lty = 3, color = "grey60") +
     geom_ribbon(aes(ymin = ci_lo, ymax = ci_hi), alpha = 0.10, color = NA) +
     geom_line(linewidth = 0.6) + geom_point(size = 1.6) +
     scale_x_continuous(breaks = seq(-4, 6, 1)) +
-    scale_color_manual(values = c(T1_low = "#2166AC", T2_mid = "#999999", T3_high = "#B2182B")) +
-    scale_fill_manual(values = c(T1_low = "#2166AC", T2_mid = "#999999", T3_high = "#B2182B")) +
+    scale_color_manual(values = COL_TERC) + scale_fill_manual(values = COL_TERC) +
     theme_minimal(base_size = 12) +
     theme(plot.title = element_text(face = "bold", size = 13),
           plot.subtitle = element_text(size = 10, color = "grey40"), legend.position = "bottom",
           plot.background = element_rect(fill = "white", color = NA),
           panel.background = element_rect(fill = "white", color = NA)) +
-    labs(title = "Event study par tercile de dependance energetique russe (fenetre propre)",
-         subtitle = "Pre-tendances a dependance comparable (leads plats par strate ?). T1_low : sanctionneurs absents.",
-         x = "Temps relatif a l'onset (annees)", y = "Semi-elasticite", color = NULL, fill = NULL,
-         caption = "Tercile = exposition energetique pre-guerre (moyenne 2018-2021), fixe par partenaire.")
-  ggsave(file.path(PATH_FIG, "es_sunab_by_energy.png"), p_by, width = 10, height = 6, dpi = 300)
+    labs(title = "Event study by tercile of energy dependence on Russia (clean window)",
+         subtitle = "Pre-trends at comparable energy dependence. The low-dependence tercile has no sanctioners.",
+         x = "Years relative to sanction onset", y = Y_ES, color = NULL, fill = NULL,
+         caption = "Tercile = pre-war energy exposure to Russia (2018-2021 average), fixed per partner.")
+  ggsave(file.path(PATH_FIG, "sanctions_by_energy_dependence.png"), p_by, width = 10, height = 6, dpi = 300)
 } else cat("  !! Aucun tercile estimable.\n")
 
 
@@ -475,11 +511,11 @@ if (!hd_ok) cat("  !! package HonestDiD indisponible : etape sautee (a installer
       theme(plot.title = element_text(face = "bold", size = 13),
             plot.background = element_rect(fill = "white", color = NA),
             panel.background = element_rect(fill = "white", color = NA)) +
-      labs(title = "HonestDiD - sensibilite de l'ATT (post k>=+1, fenetre propre 2010-2021)",
-           subtitle = sprintf("Borne de rupture M-bar = %.2f (>=1 = robuste). Grille fine. Cible = ATT, pas k=0.", Mbreak),
-           x = "M-bar (violation relative des pre-tendances)", y = "IC robuste de l'ATT (post k>=1)",
-           caption = "Rambachan & Roth (2023). Event-study TWFE (~ Sun-Abraham, cohorte 2014 dominante).")
-    ggsave(file.path(PATH_FIG, "honestdid_sensitivity.png"), p_hd, width = 9, height = 6, dpi = 300)
+      labs(title = "HonestDiD sensitivity of the sanctions ATT (post k>=+1, clean window 2010-2021)",
+           subtitle = sprintf("Breakdown M-bar = %.2f (>=1 = robust). Fine grid. Target = ATT, not k=0.", Mbreak),
+           x = "M-bar (relative magnitude of pre-trend violation)", y = "Robust CI of the ATT (post k>=1)",
+           caption = "Rambachan & Roth (2023). TWFE event study (~ Sun-Abraham; 2014 cohort dominant).")
+    ggsave(file.path(PATH_FIG, "honestdid_sanctions.png"), p_hd, width = 9, height = 6, dpi = 300)
   }
 
   # --- Tache 2 : borne HonestDiD du RESULTAT PHARE (2x2 condamne-seul + both) ---
@@ -513,25 +549,25 @@ if (!hd_ok) cat("  !! package HonestDiD indisponible : etape sautee (a installer
     hd2 <- rbindlist(Filter(Negate(is.null), list(hd_cell("b_condemn_only"), hd_cell("a_both"))), use.names = TRUE)
     if (nrow(hd2)) {
       write_tab(hd2, "tab_honestdid_2x2")
-      labs2 <- hd2[, .(brk = breakdown_Mbar[1]), by = cell]
-      sub2 <- paste(sprintf("%s : M-bar=%.2f", labs2$cell, labs2$brk), collapse = "  |  ")
-      p_hd2 <- ggplot(hd2, aes(Mbar, color = cell, fill = cell)) +
+      hd2[, cell_lbl := factor(LBL_CELL[cell], levels = c("Condemns and sanctions", "Condemns only"))]
+      labs2 <- hd2[, .(brk = breakdown_Mbar[1]), by = cell_lbl]
+      sub2 <- paste(sprintf("%s: M-bar=%.2f", labs2$cell_lbl, labs2$brk), collapse = "   |   ")
+      p_hd2 <- ggplot(hd2, aes(Mbar, color = cell_lbl, fill = cell_lbl)) +
         geom_hline(yintercept = 0, lty = 2, color = "grey50") +
         geom_ribbon(aes(ymin = lb, ymax = ub), alpha = 0.12, color = NA) +
         geom_line(aes(y = lb)) + geom_line(aes(y = ub)) +
-        scale_color_manual(values = c(b_condemn_only = "#B2182B", a_both = "#2166AC")) +
-        scale_fill_manual(values = c(b_condemn_only = "#B2182B", a_both = "#2166AC")) +
+        scale_color_manual(values = COL_CELL) + scale_fill_manual(values = COL_CELL) +
         theme_minimal(base_size = 12) +
         theme(plot.title = element_text(face = "bold", size = 13),
               plot.subtitle = element_text(size = 10, color = "grey40"), legend.position = "bottom",
               plot.background = element_rect(fill = "white", color = NA),
               panel.background = element_rect(fill = "white", color = NA)) +
-        labs(title = "HonestDiD - sensibilite du resultat phare 2x2 (effet post 2022-2023)",
-             subtitle = paste0("Borne de rupture M-bar (>=1 = robuste). ", sub2),
-             x = "M-bar (violation relative des pre-tendances)", y = "IC robuste de l'effet post",
+        labs(title = "HonestDiD sensitivity of the headline 2x2 result (post-2022 effect)",
+             subtitle = paste0("Breakdown M-bar (>=1 = robust).   ", sub2),
+             x = "M-bar (relative magnitude of pre-trend violation)", y = "Robust CI of the post effect",
              color = NULL, fill = NULL,
-             caption = "Rambachan & Roth (2023) sur l'event study cellule x annee (ref 2021 x Neither). 2 lags post -> IC larges.")
-      ggsave(file.path(PATH_FIG, "honestdid_2x2_condemn.png"), p_hd2, width = 9, height = 6, dpi = 300)
+             caption = "Rambachan & Roth (2023) on the cell x year event study (ref 2021 x Neither). Only 2 post lags -> wide CIs.")
+      ggsave(file.path(PATH_FIG, "honestdid_condemnation_2x2.png"), p_hd2, width = 9, height = 6, dpi = 300)
     }
   }
 }
@@ -548,7 +584,7 @@ cat("(i)   BALANCE / SORTING : voir 06_descriptives_did (densites brutes,",
 cat("(ii)  PRE-TENDANCES (inconditionnelles) : leads k<0 ci-dessus (tab_eventstudy_sunab) ;",
     "doivent etre plats ~0.\n")
 cat("      PRE-TENDANCES (conditionnelles energie) : tab_pretrends_conditional /",
-    "es_sunab_by_energy.png (plats par tercile ?).\n")
+    "sanctions_by_energy_dependence.png (plats par tercile).\n")
 cat("(iii) HonestDiD : tab_honestdid_bounds (M-bar de rupture).\n")
 cat("---- PUIS seulement l'effet ----\n")
 cat(sprintf("  Statique (treated_post)        : %.4f (p=%.4f)\n",
