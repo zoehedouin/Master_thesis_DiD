@@ -39,12 +39,10 @@ Sorties produites (toutes descriptives, aucune estimation) :
 
 ## Balance / SMD calibrée sur la capacité d'absorption
 
-> *Construite ici (un partenaire/ligne, baseline pré-guerre 2018-2021). Sorties
-> (tables seules, pas de figure) : `did_balance_smd.csv`/`.tex`,
-> `did_balance_smd_sanctioner.csv`/`.tex`, `did_balance_smd_new2022.csv`/`.tex`.
-> SMD = (différence de moyennes)/écart-type poolé ; |SMD|>0.1 préoccupant, >0.25
-> fort déséquilibre. Tout vit dans les tables, à égalité — pas de visuel qui
-> désignerait « le » contraste.*
+> *Construite ici (un partenaire/ligne, baseline pré-guerre 2018-2021). Sortie
+> unique (table, pas de figure) : `did_balance_smd.csv`/`.tex`. SMD = (différence
+> de moyennes)/écart-type poolé ; |SMD|>0.1 préoccupant, >0.25 fort déséquilibre.
+> Tout vit dans la table, à égalité — pas de visuel qui désignerait « le » contraste.*
 
 **Pourquoi cette balance.** Le test Crimée 2014 et `did_fig01` ont montré que
 « Condemns only × post-2022 » (−0.44, cf. `07_ppml`) reflète surtout que les
@@ -84,26 +82,17 @@ aussi (a_both = 65% UE / 67% OTAN / polyarchy 0.78), mais ces variables sont
 **quasi-colinéaires au traitement** (« bad controls ») : on les **montre pour
 documenter le sorting**, JAMAIS comme variables de conditionnement causal.
 
-**Sorting sanctionneur vs non** (`did_balance_smd_sanctioner.csv`) : sorting classique
-confirmé — les sanctionneurs sont plus gros (SMD log GDP +1.22), plus riches (+1.25),
-**plus proches** (−1.65), plus dépendants de l'énergie russe (+0.58), UE (+1.85),
-OTAN (+1.91), démocratiques (+1.90). C'est ce sorting qui **justifie le panel large
-+ FE de résistance multilatérale** (`07_ppml`) plutôt qu'une coupe Russie-restreinte.
+Le **sorting classique** (sanctionneurs = UE/OTAN/riches/proches) est déjà porté par
+les contrastes `a_both` vs `Neither` et `a_both` vs `Condemns only` ci-dessus — c'est
+lui qui **justifie le panel large + FE de résistance multilatérale** (`07_ppml`)
+plutôt qu'une coupe Russie-restreinte.
 
-**Balance des cohortes « ajoutées en 2022 »** (`did_balance_smd_new2022.csv`) :
-- **Sanctions — aucun nouvel entrant en 2022.** La cohorte « new-2022 sanctioners »
-  (sanctionne en 2022 mais pas en 2014) est **VIDE (n=0)** : les 43 sanctionneurs de
-  2022 sont exactement ceux de 2014. → Confirmation **à la marge extensive** que
-  **2022 = intensification, pas onset** ; l'hétérogénéité de cohorte côté sanctions
-  est une question d'**intensité**, traitée en `08_dcdh` (les contrastes new-sanc sont
-  donc `NA`, non fabriqués). Effectifs : vintage-2014=43, never=187.
-- **Condamnation — vague expressive 2022 sélectionnée.** Les **47** nouveaux
-  condamneurs de 2022 (n'avaient pas condamné en 2014 ; vintage-2014=98, never=51)
-  diffèrent **structurellement** des never-condamneurs (Bloc A : log GDP **−0.68**,
-  population **−1.05**, GDP/tête +0.70, distance +0.57) **et** des vintage-2014
-  (log GDP −0.77) : la vague 2022 a recruté des pays **plus petits, plus lointains,
-  plus riches par tête**. → la nouvelle adhésion expressive n'est pas un tirage
-  aléatoire (sélection à garder en tête pour le bras condamnation).
+**Cohortes 2022 — pas de table dédiée, le finding tient en une ligne** (consigné en
+commentaire dans le script) : côté **sanctions**, il n'y a **AUCUN nouvel État
+sanctionneur en 2022** (les 43 de 2022 = ceux de 2014) → **2022 = intensification,
+pas onset** ; l'hétérogénéité de cohorte est une question d'**intensité** (`08_dcdh`,
+cf. aussi `did_fig02`). Côté **condamnation**, la vague 2022 ajoute ~47 nouveaux
+condamneurs (pays plus petits/lointains que ceux de 2014) — sélection à garder en tête.
 
 **Limite (honnêteté).** Le cœur théorique de la capacité d'absorption —
 l'**infrastructure de paiement** (CIPS, SPFS, lignes de swap en devises locales) —
