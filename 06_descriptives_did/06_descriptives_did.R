@@ -450,6 +450,10 @@ balp <- cov[, {
   cy <- year %in% REFYR
   .(cell = as.character(cell_2022_static[1]),
     sanctioner = as.integer(any(sanc_partner_to_rus == 1L, na.rm = TRUE)),
+    sanc_2014 = as.integer(sanctioned_post2014[1]),
+    sanc_2022 = as.integer(sanctioned_post2022[1]),
+    cond_2014 = as.integer(condemn_2014[1]),
+    cond_2022 = as.integer(condemn_2022[1]),
     log_gdp = log(mean(partner_gdp[cy], na.rm = TRUE)),
     log_pop = log(mean(partner_pop[cy], na.rm = TRUE)),
     gdp_pc  = mean(partner_gdp_pc[cy], na.rm = TRUE),
@@ -479,52 +483,36 @@ flag_smd <- function(s) fifelse(is.na(s), "", fifelse(abs(s) > 0.25, ">0.25 stro
                          fifelse(abs(s) > 0.10, ">0.10 concern", "ok")))
 
 safely("did_balance_smd", quote({
-  log_step("did_balance_smd : balance standardisee 2x2 (b_condemn_only vs d_neither).")
+  log_step("did_balance_smd : balance standardisee des cellules 2x2 (trois contrastes, a egalite).")
   vars <- c(names(BAL_A), names(BAL_B)); labs <- c(BAL_A, BAL_B)
   bd <- balp[cell %in% c("a_both", "b_condemn_only", "d_neither")]
   cat("  - effectifs cellules :", paste(sprintf("%s=%d", c("a_both","b_condemn_only","d_neither"),
       c(bd[cell=="a_both",.N], bd[cell=="b_condemn_only",.N], bd[cell=="d_neither",.N])), collapse=" "), "\n")
+  # Trois contrastes presentes A EGALITE (aucun drapeau "headline").
   tab <- rbindlist(lapply(vars, function(v) data.table(
     block = BLOCK_OF[v], covariate = labs[v],
     mean_condemn_sanction = mean(bd[cell=="a_both", get(v)], na.rm=TRUE),
     mean_condemn_only     = mean(bd[cell=="b_condemn_only", get(v)], na.rm=TRUE),
     mean_neither          = mean(bd[cell=="d_neither", get(v)], na.rm=TRUE),
+    smd_both_vs_neither         = smd1(bd, v, "a_both", "d_neither"),
     smd_condemn_only_vs_neither = smd1(bd, v, "b_condemn_only", "d_neither"),
-    smd_both_vs_neither         = smd1(bd, v, "a_both", "d_neither"))))
-  tab[, flag_condemn_vs_neither := flag_smd(smd_condemn_only_vs_neither)]
+    smd_both_vs_condemn_only    = smd1(bd, v, "a_both", "b_condemn_only"))))
+  tab[, `:=`(flag_both_vs_neither         = flag_smd(smd_both_vs_neither),
+             flag_condemn_only_vs_neither = flag_smd(smd_condemn_only_vs_neither),
+             flag_both_vs_condemn_only    = flag_smd(smd_both_vs_condemn_only))]
   setorder(tab, block)
   write_tab(tab, "did_balance_smd", digits = 3,
-            caption = "Covariate balance across 2x2 cells (one partner per row, 2018-2021 baseline). SMD vs Neither, |SMD|>0.1 concern, >0.25 strong. Block A = absorption capacity; Block B = Western anchoring, DESCRIPTIVE ONLY (EU/NATO/IPD are quasi-collinear with treatment = bad controls, never used for conditioning).")
+            caption = "Covariate balance across 2x2 cells (one partner per row, 2018-2021 baseline). Three contrasts shown on equal footing: both vs Neither, Condemns only vs Neither, both vs Condemns only. |SMD|>0.1 concern, >0.25 strong. Block A = absorption capacity; Block B = Western anchoring, DESCRIPTIVE ONLY (EU/NATO/IPD are quasi-collinear with treatment = bad controls, never used for conditioning).")
 
-  # Love plot : |SMD| par covariable, 2 contrastes, lignes 0.1 et 0.25, par bloc.
-  lp <- melt(tab, id.vars = c("block", "covariate"),
-             measure.vars = c("smd_condemn_only_vs_neither", "smd_both_vs_neither"),
-             variable.name = "contrast", value.name = "smd")
-  lp[, contrast := fifelse(contrast == "smd_condemn_only_vs_neither",
-                           "Condemns only vs Neither", "Condemns and sanctions vs Neither")]
-  lp[, abs_smd := abs(smd)]; lp <- lp[is.finite(abs_smd)]
-  ord <- tab[, .(covariate, block, k = abs(smd_condemn_only_vs_neither))]
-  ord[is.na(k), k := -1]; setorder(ord, block, k)
-  lp[, covariate := factor(covariate, levels = ord$covariate)]
-  p <- ggplot(lp, aes(abs_smd, covariate, color = contrast)) +
-    geom_vline(xintercept = 0.10, lty = 2, color = "grey55") +
-    geom_vline(xintercept = 0.25, lty = 3, color = "#B2182B") +
-    geom_point(size = 2.6, alpha = 0.85) +
-    facet_grid(block ~ ., scales = "free_y", space = "free_y") +
-    scale_color_manual(values = c("Condemns only vs Neither" = "#B2182B",
-                                  "Condemns and sanctions vs Neither" = "#2166AC")) +
-    labs(title = "Covariate balance across 2x2 cells: is 'Condemns only' comparable to 'Neither'?",
-         subtitle = "Absolute standardized mean difference. Lines at 0.10 (concern) and 0.25 (strong imbalance). Block A on top.",
-         x = "|SMD| (2018-2021 baseline, one partner per row)", y = NULL, color = NULL,
-         caption = "Block A = absorption-capacity confounders. Block B descriptive only (EU/NATO/IPD = bad controls). Payment infrastructure (CIPS/SPFS/swap lines) not measurable in the panel.") +
-    theme(legend.position = "bottom", strip.text = element_text(face = "bold", size = 9))
-  ggsave(file.path(PATH_FIG, "did_balance_love_plot.png"), p, width = 10, height = 7, dpi = 300)
-
-  # Verdict console : Bloc A avec |SMD|>0.25 pour le contraste phare.
-  hot <- tab[block == "A. Absorption capacity" & abs(smd_condemn_only_vs_neither) > 0.25,
-             .(covariate, smd = round(smd_condemn_only_vs_neither, 2))]
-  cat("  >> Bloc A (absorption), |SMD|>0.25 pour 'Condemns only vs Neither' :\n")
-  if (nrow(hot)) print(hot) else cat("     aucune -> Bloc A globalement equilibre.\n")
+  # Verdict console (neutre) : Bloc A, |SMD|>0.25, pour les deux contrastes d'interet.
+  show_hot <- function(col, lab) {
+    hot <- tab[block == "A. Absorption capacity" & abs(get(col)) > 0.25,
+               .(covariate, smd = round(get(col), 2))]
+    cat(sprintf("  >> Bloc A (absorption), |SMD|>0.25 pour %s :\n", lab))
+    if (nrow(hot)) print(hot) else cat("     aucune -> Bloc A equilibre sur ce contraste.\n")
+  }
+  show_hot("smd_condemn_only_vs_neither", "'Condemns only vs Neither' (sous-tend le -0.44 de 07)")
+  show_hot("smd_both_vs_condemn_only",    "'Condemns and sanctions vs Condemns only'")
 }))
 
 safely("did_balance_smd_sanctioner", quote({
@@ -540,6 +528,54 @@ safely("did_balance_smd_sanctioner", quote({
   setorder(tab, block)
   write_tab(tab, "did_balance_smd_sanctioner", digits = 3,
             caption = "Sorting: sanctioners vs non-sanctioners (one partner per row, 2018-2021). Documents the classic selection (sanctioners ~ EU/NATO/rich/close) that motivates the large panel + multilateral-resistance FE.")
+}))
+
+safely("did_balance_smd_new2022", quote({
+  log_step("did_balance_smd_new2022 : balance des cohortes ajoutees en 2022 (tables seules).")
+  vars <- c(names(BAL_A), names(BAL_B)); labs <- c(BAL_A, BAL_B)
+  coh <- list(
+    new_sanc   = balp[sanc_2022 == 1L & sanc_2014 == 0L],
+    vint_sanc  = balp[sanc_2014 == 1L],
+    never_sanc = balp[sanc_2022 == 0L],
+    new_cond   = balp[cond_2022 == 1L & cond_2014 == 0L],
+    vint_cond  = balp[cond_2014 == 1L],
+    never_cond = balp[cond_2022 == 0L])
+  ncoh <- vapply(coh, nrow, integer(1))
+  cat("  - effectifs cohortes :", paste(sprintf("%s=%d", names(ncoh), ncoh), collapse = " "), "\n")
+  small <- names(ncoh)[ncoh > 0 & ncoh < 10]
+  empty <- names(ncoh)[ncoh == 0]
+  if (length(empty)) cat("  !! cohorte VIDE :", paste(empty, collapse = ", "),
+      "-> contrastes associes = NA. (new_sanc vide = AUCUN nouvel Etat sanctionneur en 2022",
+      ": 2022 = intensification, pas onset ; l'heterogeneite vit dans l'intensite -> 08_dcdh.)\n")
+  if (length(small)) cat("  !! cohortes < 10 partenaires (SMD instable, lire avec prudence) :",
+      paste(small, collapse = ", "), "\n")
+  # SMD entre deux sous-ensembles ; NA si un groupe est vide ou sd poolee nulle.
+  smd_pair <- function(d1, d2, v) {
+    if (nrow(d1) == 0L || nrow(d2) == 0L) return(NA_real_)
+    ps <- sqrt((var(d1[[v]], na.rm = TRUE) + var(d2[[v]], na.rm = TRUE)) / 2)
+    if (!is.finite(ps) || ps == 0) return(NA_real_)
+    (mean(d1[[v]], na.rm = TRUE) - mean(d2[[v]], na.rm = TRUE)) / ps
+  }
+  tab <- rbindlist(lapply(vars, function(v) data.table(
+    block = BLOCK_OF[v], covariate = labs[v],
+    smd_newSanc_vs_never    = smd_pair(coh$new_sanc, coh$never_sanc, v),
+    smd_newSanc_vs_vint2014 = smd_pair(coh$new_sanc, coh$vint_sanc,  v),
+    smd_newCond_vs_never    = smd_pair(coh$new_cond, coh$never_cond, v),
+    smd_newCond_vs_vint2014 = smd_pair(coh$new_cond, coh$vint_cond,  v))))
+  for (cc in c("smd_newSanc_vs_never","smd_newSanc_vs_vint2014","smd_newCond_vs_never","smd_newCond_vs_vint2014"))
+    tab[, (paste0("flag_", sub("smd_", "", cc))) := flag_smd(get(cc))]
+  setorder(tab, block)
+  cap <- sprintf(paste0("Balance of the 2022-added cohorts (one partner per row, 2018-2021 baseline). ",
+    "Cohort sizes: new-2022 sanctioners=%d (EMPTY: no new sanctioner state in 2022 => intensification, not onset), ",
+    "2014-vintage sanctioners=%d, never-sanctioners=%d, new-2022 condemners=%d, 2014-vintage condemners=%d, ",
+    "never-condemners=%d. Block A absorption, Block B Western anchoring (descriptive). |SMD|>0.1 concern, >0.25 strong."),
+    ncoh["new_sanc"], ncoh["vint_sanc"], ncoh["never_sanc"], ncoh["new_cond"], ncoh["vint_cond"], ncoh["never_cond"])
+  write_tab(tab, "did_balance_smd_new2022", digits = 3, caption = cap)
+  # Apercu console : nouveaux condamneurs 2022 vs jamais (Bloc A, |SMD|>0.25).
+  hc <- tab[block == "A. Absorption capacity" & abs(smd_newCond_vs_never) > 0.25,
+            .(covariate, smd = round(smd_newCond_vs_never, 2))]
+  cat("  >> New 2022 condemners vs never-condemners, Bloc A |SMD|>0.25 :\n")
+  if (nrow(hc)) print(hc) else cat("     aucune -> Bloc A equilibre.\n")
 }))
 
 

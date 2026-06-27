@@ -48,7 +48,7 @@ sous `Rscript` comme en `source()` interactif.
 
 > **Partie validité dissoute (ex-`07_validity`, squelette jamais implémenté,
 > archivé `_archive/validity_skeleton/`)** : les **pré-tendances** et **HonestDiD**
-> sont intégrés au PPML (`07_ppml`) ; la **balance/SMD** (love plot + SMD calibrés
+> sont intégrés au PPML (`07_ppml`) ; la **balance/SMD** (tables SMD calibrées
 > sur la capacité d'absorption) est construite dans `06_descriptives_did`. Tout le reste descend d'un cran
 > (ex-`08`→`07`, `09`→`08`, `10`→`09`, `11`→`10`).
 
