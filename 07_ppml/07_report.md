@@ -23,14 +23,15 @@
    SMD formel à construire là. Fait de sorting : les sanctionneurs sont concentrés
    en dépendance énergétique **moyenne/haute** (tercile **bas sans aucun traité** —
    Sud global non-sanctionneur).
-2. **Pré-tendances de l'event study** — fenêtre **PROPRE 2010-2021** (`es_sunab_russia.png`,
-   `tab_eventstudy_sunab.csv`, window=`2010_2021`) : hors crise 2008-09 et hors
-   guerre 2022-23 → **effet 2014 net**. Leads pré-onset plats. Version **secondaire
-   2008-2023** (`es_sunab_russia_fullwindow.png`) conservée pour transparence : le
-   bin +5 y **absorbe 2022-2023** (intensité → `08_dcdh`), d'où un ATT plus négatif.
-   **Conditionnelles à l'énergie** (`es_sunab_by_energy.png`, `tab_pretrends_conditional.csv`) :
-   par tercile (T2_mid, T3_high ; T1_low **sans traité**) sur la fenêtre propre →
-   pré-tendances à dépendance comparable.
+2. **Pré-tendances de l'event study** — fenêtre **PROPRE 2010-2021**
+   (`sanctions_event_study.png`, `tab_eventstudy_sunab.csv`, window=`2010_2021`) :
+   hors crise 2008-09 et hors guerre 2022-23 → **effet 2014 net**. Leads pré-onset
+   plats. Version **secondaire 2008-2023** (`sanctions_event_study_full_window.png`)
+   conservée pour transparence : le bin +5 y **absorbe 2022-2023** (intensité →
+   `08_dcdh`), d'où un ATT plus négatif. **Conditionnelles à l'énergie**
+   (`sanctions_by_energy_dependence.png`, `tab_pretrends_conditional.csv`) : par
+   tercile (medium, high ; low **sans traité**) sur la fenêtre propre → pré-tendances
+   à dépendance comparable.
 3. **HonestDiD (Rambachan & Roth 2023)** — `tab_honestdid_bounds.csv`, **reciblé sur
    l'ATT** (moyenne post k≥+1, **pas k=0**) de la fenêtre propre, **grille fine**
    `Mbarvec = seq(0, 1.2, 0.05)`. Contrôle de cohérence **réussi** : IC à M̄=0
@@ -38,12 +39,18 @@
    0.96** (interpolé) → robustesse **bonne** (l'IC robuste ne croise zéro qu'à
    M̄≈1, c.-à-d. tolère des violations presque aussi grandes que les pré-tendances
    observées). *Le 0.5 antérieur était un artefact de grille grossière (pas de 0.5).*
-4. **Pré-tendances du résultat phare (2×2)** — `es_2x2_pretrends.png`,
-   `tab_2x2_pretrends.csv` (cellule × année, réf. 2021 × Neither) : pour
-   `b_condemn_only`, les coefficients **2016-2020 sont plats et n.s.** (−0.05 à
-   +0.08, tous p>0.27) → **pas de divergence pré-2022** ; l'effet apparaît en
-   **2022 (−0.31) et 2023 (−0.42)**. Le canal expressif a donc une pré-tendance propre.
-5. **HonestDiD du résultat phare (2×2)** — `honestdid_2x2_condemn.png`,
+4. **Pré-tendances du résultat phare (2×2 Ukraine 2022)** —
+   `condemnation_2x2_pretrends_ukraine.png`, `tab_2x2_pretrends_2022.csv` (cellule ×
+   année, réf. 2021 × Neither) : pour `b_condemn_only` (Condemns only), les
+   coefficients **2016-2020 sont plats et n.s.** (−0.05 à +0.08, tous p>0.27) →
+   **pas de divergence pré-2022** ; l'effet apparaît en **2022 (−0.31) et 2023
+   (−0.42)**. Le canal expressif a donc une pré-tendance propre.
+   **2×2 Crimée 2014 (test du confondeur)** — `condemnation_2x2_pretrends_crimea.png`,
+   `tab_2x2_pretrends_2014.csv` (réf. 2013 × Neither, fenêtre propre 2010-2021,
+   `Condemns only` ≈ 56 partenaires) : on regarde si `Condemns only` décroche **déjà
+   après 2014**, *avant* que le groupe Neither (Chine/Inde) n'absorbe l'offre russe
+   redirigée post-2022. [chiffres ci-dessous, section résultat].
+5. **HonestDiD du résultat phare (2×2)** — `honestdid_condemnation_2x2.png`,
    `tab_honestdid_2x2.csv` (effet post moyen 2022-2023, réf. 2021, **2 lags
    seulement**) :
    - `a_both` : post moyen = −1.06 (IC [−1.44 ; −0.68]), **M̄ de rupture = 1.20**
@@ -77,8 +84,18 @@
     sanctionnent **depuis 2014**, donc ce coefficient mesure l'**escalade 2022
     par-dessus les sanctions déjà en place**, *pas* un onset propre (à ne pas
     sur-vendre) ; son effet post 2022-23 est robuste (M̄=1.20, cf. ci-dessus) ;
-  - **Condamne seulement : −0.44** (p=0.028) → **canal expressif réel** (le commerce
-    des condamneurs-seuls baisse aussi après 2022 *sans* sanction matérielle) ;
+  - **Condamne seulement : −0.44** (p=0.028) → signal compatible avec un **canal
+    expressif** (le commerce des condamneurs-seuls baisse après 2022 *sans* sanction
+    matérielle). **Caveat d'interprétation majeur** : ce −0.44 reflète surtout que
+    les condamneurs-seuls **n'ont PAS participé à la réorientation commerciale vers
+    la Russie** qu'ont opérée les pays *Neither* (Chine, Inde) après 2022 — visible
+    dans la vue descriptive à trois groupes
+    [`../06_descriptives_did/figures/did_fig01_trade_index_by_status.png`](../06_descriptives_did/figures/did_fig01_trade_index_by_status.png)
+    (panel b : *Neither* explose, *Condemns only* reste ~plat ; les IC, eux, sont
+    dans les event studies de `07`). C'est **compatible avec le canal expressif mais
+    aussi avec une capacité/volonté d'absorption différentielle** — à trancher par
+    le 2×2 Crimée (ci-dessous), la balance (`06`) et la décomposition (`09`). **Ne
+    pas sur-vendre** ; rappel : ce −0.44 est **fragile** sous HonestDiD (M̄=0.00) ;
   - Ni l'un ni l'autre (hors-Russie) ≈ 0 ; écart (a)−(b) ≈ **−0.84** = part matérielle ;
   - Cellule « sanctionne sans condamner » **vide** (post-KAZ Option B).
 - **Robustesse `align`** (`tab_2x2_did_align.csv`, réf. = **abstention ≈ Neither**) :
@@ -87,6 +104,17 @@
   précédent était une référence inversée, pas une contradiction : effectifs
   yes=139, abstain=35, no/absent=16.) Les abstentionnistes (Chine/Inde) ressortent
   comme bénéficiaires relatifs (réorientation du commerce russe — caveat tiers).
+- **2×2 Crimée 2014 (test du confondeur)** (`condemnation_2x2_pretrends_crimea.png`,
+  `tab_2x2_pretrends_2014.csv`, réf. 2013 × Neither) : c'est l'épisode **propre** car
+  en 2014 le groupe *Neither* n'avait **pas encore** son boom d'absorption post-2022.
+  Lecture : `Condemns only` a des leads **plats avant 2013** (2011 −0.00, 2012 −0.04 ;
+  2010 +0.14 n.s.), puis dérive **légèrement négative après 2014** (2015 −0.04, 2016
+  −0.19 [p=0.08], 2017 −0.13, 2018-2021 ≈ −0.07 à −0.09), **mais individuellement
+  non significative**. → Un **soupçon de canal expressif dès 2014, indépendant de la
+  réorientation post-2022** (ce qui *renforce* l'interprétation expressive du −0.44),
+  **mais faible et fragile**. **Caveat** : les sanctions de 2014 (financières,
+  sectorielles) sont **sans commune mesure** avec celles de 2022 — l'amplitude n'est
+  pas comparable.
 
 ## À rédiger
 Interprétation économique du contraste expressif/matériel (cœur du mémoire), de
