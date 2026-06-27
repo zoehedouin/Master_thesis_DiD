@@ -11,13 +11,10 @@
 Aucune estimation causale ici : montrer la structure du choc et préparer la
 lecture de la validité.
 
-- **Socle général** : structure du commerce, distribution de l'IPD, cartes
-  (matériel d'intro / cadrage).
-- **Bloc Russie** (à recentrer, cf. `## TODO §1` dans `06_descriptives.R`) :
-  - évolution du commerce Russie-partenaires par statut (sanctionneur /
-    condamneur ONU / cellule du 2×2) ;
-  - calendrier du traitement (pic onset 2014, intensification 2022) ;
-  - tableau croisé du 2×2 (nb de partenaires et poids commercial par cellule) ;
-  - distributions des covariables par groupe (premier regard sur le sorting).
-
-*Aucun chiffre n'est reporté tant que le bloc Russie n'est pas implémenté.*
+- **Socle général** (ce script, `06_descriptives.R`) : structure mondiale du
+  commerce, distribution de l'IPD, OTAN, cartes — matériel d'intro / cadrage.
+- **Bloc Russie** : désormais **implémenté dans un script séparé** —
+  [`../06_descriptives_did/06_descriptives_did.R`](../06_descriptives_did/06_descriptives_did.R)
+  (évolution du commerce avec la Russie par statut, calendrier du traitement,
+  tableau croisé du 2×2, distributions des covariables par groupe). Voir son
+  rapport : [`../06_descriptives_did/06_descriptives_did_report.md`](../06_descriptives_did/06_descriptives_did_report.md).

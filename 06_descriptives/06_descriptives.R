@@ -20,29 +20,13 @@
 #       ci-dessous. Aucun resultat n'est fabrique.
 #
 # -----------------------------------------------------------------------------
-## TODO (feuille de route §1) — Bloc Russie (a AJOUTER, non implemente)
-#
-#   [ ] Evolution du commerce Russie-partenaires par statut :
-#         - sanctionneur (sanctioner)
-#         - condamnateur ONU (UN-condemner)
-#         - cellule 2x2 (croisement sanction x vote ONU)
-#       => series temporelles du commerce bilateral avec la Russie par groupe.
-#
-#   [ ] Calendrier de traitement (treatment calendar) :
-#         - pic d'entree en traitement (onset peak) 2014
-#         - intensification 2022
-#       => visualiser le timing d'entree des partenaires dans le traitement.
-#
-#   [ ] Tableau croise 2x2 (cross-tab) :
-#         - nombre de partenaires par cellule
-#         - poids commercial par cellule
-#       => croisement sanctionneur x condamnateur ONU.
-#
-#   [ ] Distributions des covariables par groupe :
-#         - premier regard sur le tri / la selection (first look at sorting)
-#       => comparer les distributions des controles entre groupes de traitement.
-#
-# (Bloc B non code : ne PAS fabriquer de chiffres ; implementation ulterieure.)
+# Bloc Russie (feuille de route §1) : IMPLEMENTE dans un script SEPARE
+#   -> ../06_descriptives_did/06_descriptives_did.R
+# (evolution du commerce avec la Russie par statut, calendrier du traitement
+#  onset 2014 / intensite 2022, tableau croise du 2x2, distributions brutes des
+#  covariables par groupe, carte des cellules). Ce script-ci reste le SOCLE
+#  GENERAL (structure mondiale du commerce, IPD, OTAN, cartes) et n'est pas
+#  modifie sur le plan analytique.
 # =============================================================================
 
 
