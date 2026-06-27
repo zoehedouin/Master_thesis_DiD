@@ -158,13 +158,12 @@ safely("did_fig01", quote({
   gb <- merge(trade_py, pp[, .(partner_iso3, cell_2022)], by = "partner_iso3")
   gb <- gb[!is.na(cell_2022), .(trade = sum(trade_rus)), by = .(cell_2022, year)][order(cell_2022, year)]
   gb[, idx := idx100(trade, year), by = cell_2022]
-  # Relabel LOCAL : signaler que "Sanction only" est un singleton (KAZ, n=1) ;
-  # ne PAS modifier CELL_LAB global (sert a la carte et aux tables, inchangees).
-  LAB_B <- CELL_LAB; LAB_B["c_sanction_only"] <- "Sanction only (n=1, KAZ)"
-  gb[, cell := factor(LAB_B[as.character(cell_2022)], levels = LAB_B)]
+  # Cellule (c) "Sanction only" vide depuis le recodage Option B (KAZ -> (d)) :
+  # le niveau inutilise est automatiquement absent de la legende (drop par defaut).
+  gb[, cell := factor(CELL_LAB[as.character(cell_2022)], levels = CELL_LAB)]
   pb <- ggplot(gb[!is.na(idx)], aes(year, idx, color = cell)) +
     geom_line(linewidth = 0.9) + add_shock() +
-    scale_color_manual(values = setNames(pal_cell, LAB_B)) +
+    scale_color_manual(values = setNames(pal_cell, CELL_LAB)) +
     labs(title = "(b) Trade with Russia, by 2x2 cell", x = NULL,
          y = "Index (2013 = 100)", color = NULL)
 
@@ -291,9 +290,8 @@ safely("did_fig05", quote({
   ts <- ts[year >= 2019L]
   agg <- ts[, .(strat_share = sum(strat_rus, na.rm = TRUE) / sum(trade_rus, na.rm = TRUE)),
             by = .(cell_2022, period)]
-  # Relabel LOCAL : "Sanction only" = singleton (n=1) ; CELL_LAB global inchange.
-  LAB_5 <- CELL_LAB; LAB_5["c_sanction_only"] <- "Sanction only (n=1)"
-  agg[, cell := factor(LAB_5[as.character(cell_2022)], levels = LAB_5)]
+  # Cellule (c) "Sanction only" vide depuis Option B -> niveau absent des barres.
+  agg[, cell := factor(CELL_LAB[as.character(cell_2022)], levels = CELL_LAB)]
   agg[, period := factor(period, levels = c("Pre-2022 (2019-2021)", "Post-2022 (2022-2024)"))]
   p <- ggplot(agg, aes(cell, strat_share, fill = period)) +
     geom_col(position = position_dodge(), width = 0.7) +
@@ -326,9 +324,7 @@ safely("did_map01", quote({
     coord_sf(crs = "+proj=robin") +
     labs(title = "Geography of alignment toward Russia (2022)",
          subtitle = "Partners by 2x2 cell (condemn x sanction); Russia in dark grey",
-         caption = paste("Source: UN ES-11/1 vote, GSDB v4. Map: Natural Earth.",
-                         "Sanction only = Kazakhstan seul (n=1) ; probablement un artefact GSDB, verification en cours.",
-                         sep = "\n")) +
+         caption = "Source: UN ES-11/1 vote, GSDB v4. Map: Natural Earth.") +
     theme(panel.grid.major = element_blank(),
           axis.text = element_blank(), axis.ticks = element_blank())
   ggsave(file.path(PATH_MAP, "did_map01_cell_2022_world.png"), p,
