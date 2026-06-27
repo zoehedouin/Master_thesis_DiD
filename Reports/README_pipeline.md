@@ -48,8 +48,8 @@ sous `Rscript` comme en `source()` interactif.
 
 > **Partie validité dissoute (ex-`07_validity`, squelette jamais implémenté,
 > archivé `_archive/validity_skeleton/`)** : les **pré-tendances** et **HonestDiD**
-> sont intégrés au PPML (`07_ppml`) ; la **balance/SMD** sera construite à neuf
-> dans `06_descriptives_did` (tâche ultérieure). Tout le reste descend d'un cran
+> sont intégrés au PPML (`07_ppml`) ; la **balance/SMD** (love plot + SMD calibrés
+> sur la capacité d'absorption) est construite dans `06_descriptives_did`. Tout le reste descend d'un cran
 > (ex-`08`→`07`, `09`→`08`, `10`→`09`, `11`→`10`).
 
 Chaque partie `06`–`10` contient aussi `NN_report.md` (rapport de partie).
@@ -73,7 +73,7 @@ bloc `## TODO (feuille de route §X)`. Aucun résultat n'y est fabriqué.
 ```
 
 Dépendances de données : `04` (votes) et `05` (covariables/2×2) alimentent le
-2×2 de `07`. La balance/SMD viendra en `06_descriptives_did`. `09` et `10`
+2×2 de `07`. La balance/SMD est en `06_descriptives_did`. `09` et `10`
 réutilisent les meilleures specs de `07`/`08`.
 
 ## Matrice traitement × outcome × estimateur (feuille de route)
