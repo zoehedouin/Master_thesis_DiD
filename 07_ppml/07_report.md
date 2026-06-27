@@ -32,30 +32,51 @@
    par tercile (T2_mid, T3_high ; T1_low **sans traité**) sur la fenêtre propre →
    pré-tendances à dépendance comparable.
 3. **HonestDiD (Rambachan & Roth 2023)** — `tab_honestdid_bounds.csv`, **reciblé sur
-   l'ATT** (moyenne post k≥+1, **pas k=0**) de la fenêtre propre. Contrôle de
-   cohérence **réussi** : IC à M̄=0 [−0.510 ; −0.345] ≡ IC de l'ATT cible
-   [−0.510 ; −0.345]. **M̄ de rupture = 0.5** → robustesse **modérée** (l'effet
-   survit à des violations jusqu'à 0.5× les pré-tendances, IC inclut 0 dès M̄=1).
+   l'ATT** (moyenne post k≥+1, **pas k=0**) de la fenêtre propre, **grille fine**
+   `Mbarvec = seq(0, 1.2, 0.05)`. Contrôle de cohérence **réussi** : IC à M̄=0
+   [−0.510 ; −0.345] ≡ IC de l'ATT cible [−0.510 ; −0.345]. **M̄ de rupture exact =
+   0.96** (interpolé) → robustesse **bonne** (l'IC robuste ne croise zéro qu'à
+   M̄≈1, c.-à-d. tolère des violations presque aussi grandes que les pré-tendances
+   observées). *Le 0.5 antérieur était un artefact de grille grossière (pas de 0.5).*
 4. **Pré-tendances du résultat phare (2×2)** — `es_2x2_pretrends.png`,
    `tab_2x2_pretrends.csv` (cellule × année, réf. 2021 × Neither) : pour
    `b_condemn_only`, les coefficients **2016-2020 sont plats et n.s.** (−0.05 à
    +0.08, tous p>0.27) → **pas de divergence pré-2022** ; l'effet apparaît en
    **2022 (−0.31) et 2023 (−0.42)**. Le canal expressif a donc une pré-tendance propre.
+5. **HonestDiD du résultat phare (2×2)** — `honestdid_2x2_condemn.png`,
+   `tab_honestdid_2x2.csv` (effet post moyen 2022-2023, réf. 2021, **2 lags
+   seulement**) :
+   - `a_both` : post moyen = −1.06 (IC [−1.44 ; −0.68]), **M̄ de rupture = 1.20**
+     (plafond de grille) → **robuste** ;
+   - **`b_condemn_only` (canal expressif, le phare) : post moyen = −0.36 (IC
+     [−0.75 ; +0.03]), M̄ de rupture = 0.00 → FRAGILE.** Dès M̄=0 l'IC robuste
+     inclut zéro : sous la loupe event-study (référence 2021 seule, 2 lags), l'effet
+     expressif n'est pas individuellement significatif année par année. Le −0.44
+     (p=0.028) du 2×2 poolé tient par le **poolage** des deux années post, pas
+     au-delà. **À reporter comme suggestif mais fragile**, pas comme établi.
 
 ## Résultat (lu APRÈS la validité)
 - **DiD statique** (`tab_static_did.csv`) : sanction non-commerciale dirigée →
   **−0.58** (p<0.0001 ; −0.55 avec contrôle `under_any_sanction`).
 - **Contraste par type** : non-commercial **−0.48** (p<0.001) vs commercial −0.07
-  (n.s.). **Effectifs quasi identiques** (`tab_type_counts.csv` : 44 vs 43
-  partenaires, 802 vs 778 dyades-années) → le « commercial n.s. » **n'est PAS un
-  manque de puissance** mais reflète le **contenu** des sanctions sur la Russie
-  (mesures commerciales largement vidées par les exemptions énergétiques ;
-  l'hostilité mord par le canal financier/non-commercial).
+  (n.s.). Les deux ensembles de sanctionneurs **se recouvrent presque entièrement**
+  (`tab_type_counts.csv` : 44 partenaires non-commerciaux vs 43 commerciaux, 802 vs
+  778 dyades-années) : le contraste s'identifie donc sur la **variation de calendrier
+  intra-partenaire** (années sous mesure commerciale vs non-commerciale), pas sur des
+  partenaires distincts. Le « commercial n.s. » est à présenter **avec prudence
+  (quasi-colinéarité des deux traitements)** — ce n'est ni un manque de puissance par
+  petit n, ni une preuve forte que le commercial ne mord pas ; au mieux une indication
+  que, à coalition quasi identique, c'est la composante non-commerciale (financière)
+  qui porte l'effet, les mesures commerciales étant largement vidées par les
+  exemptions énergétiques.
 - **Event study (fenêtre propre 2010-2021)** : **ATT 2014 net = −0.40** (p<0.0001).
   Version full 2008-2023 = −0.60 (caveat : conflate l'onset 2014 et
   l'intensification 2022 ; cette dernière relève de `08_dcdh`).
 - **2×2 condamne × sanctionne** (`tab_2x2_did.csv`, réf. Neither-Russie × post-2022) :
-  - Condamne + sanctionne : **−1.28** (p<10⁻¹¹) ;
+  - Condamne + sanctionne : **−1.28** (p<10⁻¹¹) — attention : les « both »
+    sanctionnent **depuis 2014**, donc ce coefficient mesure l'**escalade 2022
+    par-dessus les sanctions déjà en place**, *pas* un onset propre (à ne pas
+    sur-vendre) ; son effet post 2022-23 est robuste (M̄=1.20, cf. ci-dessus) ;
   - **Condamne seulement : −0.44** (p=0.028) → **canal expressif réel** (le commerce
     des condamneurs-seuls baisse aussi après 2022 *sans* sanction matérielle) ;
   - Ni l'un ni l'autre (hors-Russie) ≈ 0 ; écart (a)−(b) ≈ **−0.84** = part matérielle ;
@@ -69,5 +90,7 @@
 
 ## À rédiger
 Interprétation économique du contraste expressif/matériel (cœur du mémoire), de
-l'effet 2014 net (−0.40) vs l'escalade 2022 (renvoyée à `08_dcdh`), de la robustesse
-modérée (M̄=0.5), et du canal financier (commercial vidé par l'énergie).
+l'effet 2014 net (−0.40, **robuste** : M̄=0.96) vs l'escalade 2022 (renvoyée à
+`08_dcdh`), du canal financier (commercial vidé par l'énergie, quasi-colinéaire), et
+de la **fragilité** du canal expressif pur (`condemn_only`, M̄=0.00) — à présenter
+comme suggestif, le matériel (`a_both`, M̄=1.20) étant le résultat solide.

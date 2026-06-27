@@ -432,10 +432,24 @@ if (!hd_ok) cat("  !! package HonestDiD indisponible : etape sautee (a installer
   att_point <- sum(l_vec * bp); att_se <- sqrt(as.numeric(t(l_vec) %*% Vp %*% l_vec))
   cat(sprintf("  - ATT cible (TWFE, k>=1) : %.4f  IC95 [%.4f ; %.4f]\n",
               att_point, att_point - 1.96*att_se, att_point + 1.96*att_se))
+  # M-bar de rupture EXACT : plus grand M-bar ou l'IC robuste exclut encore zero,
+  # interpole lineairement entre le dernier point excluant et le premier incluant
+  # (la grille seule sous-estime ; 0.5 etait un artefact de pas grossier).
+  hd_break <- function(dt) {
+    setorder(dt, Mbar)
+    excl <- (dt$lb > 0 & dt$ub > 0) | (dt$lb < 0 & dt$ub < 0)
+    if (!any(excl)) return(0)
+    li <- max(which(excl))
+    if (li == nrow(dt)) return(dt$Mbar[li])              # ne croise pas sur la grille
+    bnd <- if (dt$ub[li] < 0) "ub" else "lb"             # la borne qui approche 0
+    y1 <- dt[[bnd]][li]; y2 <- dt[[bnd]][li + 1]
+    dt$Mbar[li] + (0 - y1) * (dt$Mbar[li + 1] - dt$Mbar[li]) / (y2 - y1)
+  }
+  GRID <- seq(0, 1.2, by = 0.05)
   hd <- tryCatch({
     rm_res <- HonestDiD::createSensitivityResults_relativeMagnitudes(
       betahat = betahat, sigma = V, numPrePeriods = numPre, numPostPeriods = numPost,
-      l_vec = l_vec, Mbarvec = seq(0, 2, by = 0.5))
+      l_vec = l_vec, Mbarvec = GRID)
     sd_res <- HonestDiD::createSensitivityResults(
       betahat = betahat, sigma = V, numPrePeriods = numPre, numPostPeriods = numPost,
       l_vec = l_vec, Mvec = seq(0, 0.3, by = 0.1))
@@ -444,17 +458,17 @@ if (!hd_ok) cat("  !! package HonestDiD indisponible : etape sautee (a installer
   if (!is.null(hd)) {
     rm_dt <- hd$rm; rm_dt[, `:=`(method = "relative_magnitudes", estimand = "ATT_post_k>=1")]
     sd_dt <- hd$sd; sd_dt[, `:=`(method = "smoothness", estimand = "ATT_post_k>=1")]
+    Mbreak <- hd_break(rm_dt)
+    rm_dt[, breakdown_Mbar := Mbreak]
     hd_tab <- rbind(rm_dt, sd_dt, fill = TRUE)
     write_tab(hd_tab, "tab_honestdid_bounds")
-    # Controle de coherence M-bar=0 <-> IC de l'ATT cible
     m0 <- rm_dt[Mbar == 0]
     cat(sprintf("  - COHERENCE : HonestDiD M-bar=0 IC [%.4f ; %.4f] vs ATT cible IC [%.4f ; %.4f]\n",
                 m0$lb[1], m0$ub[1], att_point - 1.96*att_se, att_point + 1.96*att_se))
-    sig <- rm_dt[(lb > 0 & ub > 0) | (lb < 0 & ub < 0)]
-    Mbreak <- if (nrow(sig)) max(sig$Mbar, na.rm = TRUE) else NA_real_
-    cat("  - M-bar de rupture (recible ATT) :", Mbreak, "\n")
+    cat(sprintf("  - M-bar de rupture EXACT (ATT, grille fine) : %.3f\n", Mbreak))
     p_hd <- ggplot(rm_dt, aes(Mbar)) +
       geom_hline(yintercept = 0, lty = 2, color = "grey50") +
+      geom_vline(xintercept = Mbreak, lty = 3, color = "#B2182B") +
       geom_ribbon(aes(ymin = lb, ymax = ub), alpha = 0.2, fill = "#2166AC") +
       geom_line(aes(y = lb)) + geom_line(aes(y = ub)) +
       theme_minimal(base_size = 12) +
@@ -462,10 +476,63 @@ if (!hd_ok) cat("  !! package HonestDiD indisponible : etape sautee (a installer
             plot.background = element_rect(fill = "white", color = NA),
             panel.background = element_rect(fill = "white", color = NA)) +
       labs(title = "HonestDiD - sensibilite de l'ATT (post k>=+1, fenetre propre 2010-2021)",
-           subtitle = sprintf("Borne de rupture M-bar = %s (>=1 = robuste). Cible = ATT, pas k=0.", format(Mbreak)),
+           subtitle = sprintf("Borne de rupture M-bar = %.2f (>=1 = robuste). Grille fine. Cible = ATT, pas k=0.", Mbreak),
            x = "M-bar (violation relative des pre-tendances)", y = "IC robuste de l'ATT (post k>=1)",
            caption = "Rambachan & Roth (2023). Event-study TWFE (~ Sun-Abraham, cohorte 2014 dominante).")
     ggsave(file.path(PATH_FIG, "honestdid_sensitivity.png"), p_hd, width = 9, height = 6, dpi = 300)
+  }
+
+  # --- Tache 2 : borne HonestDiD du RESULTAT PHARE (2x2 condamne-seul + both) ---
+  # Sur l'event study cellule x annee (ref 2021 x Neither) : pre = 2016-2020 (leads),
+  # post = 2022-2023 (lags), cible = effet post moyen 2022-2023. Avec 2 lags seulement
+  # et des IC larges, le M-bar de rupture du condamne-seul sera probablement bas
+  # (resultat possiblement fragile) -> on le rapporte tel quel.
+  if (exists("m_2x2_es") && !is.null(m_2x2_es)) {
+    b2 <- coef(m_2x2_es); V2 <- vcov(m_2x2_es)
+    hd_cell <- function(cell) {
+      tt <- grep("year::", names(b2), value = TRUE)
+      tt <- tt[grepl(sprintf("cell_2022::%s$", cell), tt)]
+      if (!length(tt)) return(NULL)
+      yr <- as.integer(sub(".*year::([0-9]+).*", "\\1", tt)); o <- order(yr); tt <- tt[o]; yr <- yr[o]
+      bh <- b2[tt]; Vv <- V2[tt, tt, drop = FALSE]
+      nPre <- sum(yr < 2021L); nPost <- sum(yr > 2021L)
+      if (nPre < 1L || nPost < 1L) return(NULL)
+      lv <- rep(1 / nPost, nPost)                        # moyenne post 2022-2023 (longueur = nPost)
+      r <- tryCatch(HonestDiD::createSensitivityResults_relativeMagnitudes(
+             betahat = bh, sigma = Vv, numPrePeriods = nPre, numPostPeriods = nPost,
+             l_vec = lv, Mbarvec = GRID),
+           error = function(e) {cat("    HonestDiD 2x2", cell, "skip:", conditionMessage(e), "\n"); NULL})
+      if (is.null(r)) return(NULL)
+      dt <- as.data.table(r); dt[, `:=`(cell = cell, method = "relative_magnitudes")]
+      brk <- hd_break(dt); dt[, breakdown_Mbar := brk]
+      pt <- sum(lv * bh[yr > 2021L]); se <- sqrt(as.numeric(t(lv) %*% Vv[yr > 2021L, yr > 2021L, drop=FALSE] %*% lv))
+      cat(sprintf("  - 2x2 %-15s : post moyen 2022-23 = %.4f (IC [%.4f;%.4f]) | M-bar rupture = %.3f (nPre=%d,nPost=%d)\n",
+                  cell, pt, pt-1.96*se, pt+1.96*se, brk, nPre, nPost))
+      dt
+    }
+    hd2 <- rbindlist(Filter(Negate(is.null), list(hd_cell("b_condemn_only"), hd_cell("a_both"))), use.names = TRUE)
+    if (nrow(hd2)) {
+      write_tab(hd2, "tab_honestdid_2x2")
+      labs2 <- hd2[, .(brk = breakdown_Mbar[1]), by = cell]
+      sub2 <- paste(sprintf("%s : M-bar=%.2f", labs2$cell, labs2$brk), collapse = "  |  ")
+      p_hd2 <- ggplot(hd2, aes(Mbar, color = cell, fill = cell)) +
+        geom_hline(yintercept = 0, lty = 2, color = "grey50") +
+        geom_ribbon(aes(ymin = lb, ymax = ub), alpha = 0.12, color = NA) +
+        geom_line(aes(y = lb)) + geom_line(aes(y = ub)) +
+        scale_color_manual(values = c(b_condemn_only = "#B2182B", a_both = "#2166AC")) +
+        scale_fill_manual(values = c(b_condemn_only = "#B2182B", a_both = "#2166AC")) +
+        theme_minimal(base_size = 12) +
+        theme(plot.title = element_text(face = "bold", size = 13),
+              plot.subtitle = element_text(size = 10, color = "grey40"), legend.position = "bottom",
+              plot.background = element_rect(fill = "white", color = NA),
+              panel.background = element_rect(fill = "white", color = NA)) +
+        labs(title = "HonestDiD - sensibilite du resultat phare 2x2 (effet post 2022-2023)",
+             subtitle = paste0("Borne de rupture M-bar (>=1 = robuste). ", sub2),
+             x = "M-bar (violation relative des pre-tendances)", y = "IC robuste de l'effet post",
+             color = NULL, fill = NULL,
+             caption = "Rambachan & Roth (2023) sur l'event study cellule x annee (ref 2021 x Neither). 2 lags post -> IC larges.")
+      ggsave(file.path(PATH_FIG, "honestdid_2x2_condemn.png"), p_hd2, width = 9, height = 6, dpi = 300)
+    }
   }
 }
 
