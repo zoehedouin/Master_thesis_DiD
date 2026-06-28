@@ -43,9 +43,10 @@ sous `Rscript` comme en `source()` interactif.
 | 06b | `06_descriptives_did/06_descriptives_did.R` | **NEW** | §1 descriptives (bloc DiD Russie) | `06_descriptives_did/{figures,tables,maps}/` (préfixe `did_`) |
 | 07 | `07_ppml/07_ppml.R` | **réécrit à neuf** (Russie-centré) | §2-3 PPML : statique, type, 2×2 ONU, Sun-Abraham, pré-tendances cond. énergie, HonestDiD | `07_ppml/{figures,tables}/` |
 | 08 | `08_ols/` (monde OLS/log, ≠ PPML dirigé du 07) | section | §4 intensité | `08_ols/{figures,tables}/` |
-| 08a | `08_ols/08_ols.R` | **fusion** (`11`+`11b`+`11c`+`11d`) + skel. `dist_lag_het` | §4.1 dCDH intensité (paliers) | dCDH event study, by-tier, robustesses |
+| 08a | `08_ols/08_ols.R` | **fusion** (`11`+`11b`+`11c`+`11d`) | §4.1 dCDH intensité (paliers) | dCDH event study, by-tier, robustesses |
 | 08b | `08_ols/08_zeros_diagnostic.R` | diagnostic | §4 zéros (avant figer la transformation) | `tab_zeros_diagnostic.csv`, `08_zeros_report.md` |
-| 08c | `08_ols/08_sunab_ols.R` | **NEW** | §4 Sun-Abraham OLS (pkey, log+1) | `tab_sunab_ols.csv`, `es_fig_sunab_ppml_vs_ols.png` |
+| 08c | `08_ols/08_sunab_ols.R` | **NEW** | §4 Sun-Abraham OLS (pkey, log+1) + A′ (PPML pkey) + tri extinctions | `tab_sunab_ols.csv`, `tab_sunab_pkey_ppml.csv`, `tab_reporting_gap_triage.csv`, `es_fig_sunab_ppml_vs_ols.png` |
+| 08d | `08_ols/08_distlag.R` | **NEW** | §4.2 distributed-lag hétérogène (DistLagHet) + naïf TWFE + IHS | `tab_distlag.csv`, `es_fig_distlag.png`, `08_distlag_report.md` |
 | 09 | `09_decomposition/09_decomposition.R` | **NEW (squelette)** | §5 stratégique / non-stratégique | `09_decomposition/{figures,tables}/` |
 | 10 | `10_robustness/10_robustness.R` | **NEW (squelette)** | §6 placebos, fenêtres, triangulation, sender | `10_robustness/{figures,tables}/` |
 

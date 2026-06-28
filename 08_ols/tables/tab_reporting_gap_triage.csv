@@ -1,0 +1,13 @@
+pkey,partner,pre_mean,tier_post,wpre,wpost,retention,verdict
+BLR_RUS,BLR,33506383.4075,1,68731260.666,24898937.8435,0.362265112006261,FLAG (anchor: RUS+BLR both COMTRADE-dark; 33.5bn->0 implausible)
+RUS_SDN,SDN,744686.21175,2,14086799.927,13680386.7705,0.971149362622732,KEEP (partner reports world trade -> real bilateral collapse)
+RUS_YEM,YEM,332561.502,2,12320645.3445,13747231.003,1.1157882252602,KEEP (partner reports world trade -> real bilateral collapse)
+LBY_RUS,LBY,200669.0675,1,41250104.52925,59260781.3245,1.43662136134658,KEEP (partner reports world trade -> real bilateral collapse)
+IRQ_RUS,IRQ,178201.73925,1,141070477.14825,197593094.7645,1.40066935874081,KEEP (partner reports world trade -> real bilateral collapse)
+AFG_RUS,AFG,153054.76425,1,12637910.277,8701476.1725,0.688521755715896,KEEP (partner reports world trade -> real bilateral collapse)
+PRK_RUS,PRK,30930.25025,2,2134648.46275,2655762.973,1.24412193358464,KEEP (partner reports world trade -> real bilateral collapse)
+HTI_RUS,HTI,12093.07325,1,5232378.2435,5002332.005,0.956034096199797,KEEP (partner reports world trade -> real bilateral collapse)
+RUS_SOM,SOM,7055.4735,2,4807388.54725,6404050.799,1.33212673285236,KEEP (partner reports world trade -> real bilateral collapse)
+ERI_RUS,ERI,5504.19425,0,941904.6575,1156172.9,1.22748400360256,KEEP (partner reports world trade -> real bilateral collapse)
+RUS_SSD,SSD,3574.19125,2,2308618.54525,2218615.6465,0.961014391513409,KEEP (partner reports world trade -> real bilateral collapse)
+RUS_SLE,SLE,1914.45125,0,2111222.74,3318660.917,1.57191415861692,KEEP (partner reports world trade -> real bilateral collapse)

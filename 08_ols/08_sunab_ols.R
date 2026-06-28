@@ -61,6 +61,7 @@ pk <- d[year >= YR_MIN & year <= YR_MAX, .(
 pk[, log_trade := log(trade_tot + 1)]
 rm(d); gc(verbose = FALSE)
 cat(sprintf("  - pkey-year obs : %d | paires : %d\n", nrow(pk), uniqueN(pk$pkey)))
+pk_full <- copy(pk)   # panel complet (avant toute exclusion) pour le tri PARTIE 2
 
 # ---- 2. Liste des extinctions sous traitement + exclusion reporting-gap ------
 log_step("2. Extinctions pre>0 -> zero post (ever-traitees) + exclusion reporting-gap.")
@@ -88,6 +89,41 @@ pk <- pk[!(pkey %in% pairs_reporting_gap)]
 cat(sprintf("  - exclusion reporting-gap %s : -%d paire(s), -%d obs (reste %d paires, %d obs)\n",
             paste(pairs_reporting_gap, collapse = ","),
             n_pair0 - uniqueN(pk$pkey), n_obs0 - nrow(pk), uniqueN(pk$pkey), nrow(pk)))
+
+# ---- 2b. TRI des extinctions Russie (data step, alimente l'exclusion de C) ---
+# C (dose) vit sur l'escalade 2022 -> les extinctions Russie doivent etre triees.
+# Critere REPRODUCTIBLE (sans imputation) : le partenaire non-russe declare-t-il
+# encore du commerce (present dans BACI = miroir reconstruit) sur 2022-2023 ?
+#   * partenaire present (commerce mondial BACI substantiel) -> zero avec la Russie
+#     = collapse REEL bilateral -> on GARDE.
+#   * partenaire disparu de BACI (les deux cotes eteints) -> trou de reporting
+#     -> on FLAGUE (niveau paire, jamais pays).
+log_step("2b. Tri des extinctions Russie (commerce mondial BACI pre/post du partenaire).")
+cw <- rbind(pk_full[, .(iso = sub("_.*", "", pkey), trade_tot, year)],
+            pk_full[, .(iso = sub(".*_", "", pkey), trade_tot, year)])
+world <- cw[, .(world = sum(trade_tot)), by = .(iso, year)]
+wpp <- merge(world[year %in% PRE,  .(wpre  = mean(world)), by = iso],
+             world[year %in% POST, .(wpost = mean(world)), by = iso], by = "iso", all = TRUE)
+tri <- copy(induced[rus == TRUE])
+tri[, partner := fifelse(sub("_.*", "", pkey) == "RUS", sub(".*_", "", pkey), sub("_.*", "", pkey))]
+tri <- merge(tri, wpp, by.x = "partner", by.y = "iso", all.x = TRUE)
+tri[, retention := wpost / wpre]
+tri[, verdict := fcase(
+  pkey == "BLR_RUS", "FLAG (anchor: RUS+BLR both COMTRADE-dark; 33.5bn->0 implausible)",
+  is.na(wpost) | wpost <= 0 | retention < 0.02, "FLAG (partner vanished from BACI)",
+  default = "KEEP (partner reports world trade -> real bilateral collapse)")]
+setorder(tri, -pre_mean)
+cat("  - tri des extinctions Russie :\n")
+print(tri[, .(pkey, partner, pre_mean = round(pre_mean, 0), tier_post,
+              wpost = round(wpost, 0), retention = round(retention, 2), verdict)])
+fwrite(tri[, .(pkey, partner, pre_mean, tier_post, wpre, wpost, retention, verdict)],
+       file.path(PATH_TAB, "tab_reporting_gap_triage.csv"))
+flagged <- tri[grepl("^FLAG", verdict), pkey]
+pairs_reporting_gap <- unique(c(pairs_reporting_gap, flagged))   # extension data-driven
+cat(sprintf("  - paires FLAGUEES (exclues uniformement, dont C) : %s\n",
+            paste(pairs_reporting_gap, collapse = ", ")))
+cat(sprintf("  - extension vs BLR_RUS seul : %d paire(s) supplementaire(s) (les autres = collapses reels gardes)\n",
+            length(setdiff(pairs_reporting_gap, "BLR_RUS"))))
 
 # ---- 3. Onset / cohorte (Sun-Abraham, traitement binaire absorbant) ---------
 log_step("3. Onset / cohorte.")
@@ -135,27 +171,65 @@ out_B <- rbindlist(list(
 fwrite(out_B, file.path(PATH_TAB, "tab_sunab_ols.csv"))
 cat("  - ecrit tab_sunab_ols.csv\n")
 
-# ---- 5. COMPARAISON A (PPML dirige, 07) vs B (OLS pkey) — pont qualitatif ----
-log_step("5. Overlay A (PPML dirige, fenetre full 2008-2023) vs B (OLS pkey).")
+# ---- 4'. ADDENDUM A' : PPML-sunab sur le MEME panel pkey que B ---------------
+# Seule l'ECHELLE change vs B (fepois/zeros natifs au lieu de feols/log+1) :
+# meme panel pk, memes cohortes, memes bornes +-5, meme exclusion BLR_RUS, memes
+# left-censored exclus. Decompose l'ecart A<->B :
+#   A->A' = effet du BUNDLE geometrie+traitement (dirige+MRT -> pkey monde) ;
+#   A'->B = effet de l'ECHELLE PURE (PPML -> OLS log+1, MEME panel).
+log_step("4'. fepois Sun-Abraham (A') sur le panel pkey (outcome = trade_tot niveau).")
+aprime_ok <- TRUE
+m_Ap <- tryCatch(
+  fepois(trade_tot ~ sunab(cohort, year,
+           bin.rel = list("-5" = rng[1]:-5, "5" = 5:rng[2])) | pkey + year,
+         data = pk, cluster = ~ pkey),
+  error = function(e) { cat("  !! A' (fepois) a echoue :", conditionMessage(e), "\n"); NULL })
+if (is.null(m_Ap)) {
+  aprime_ok <- FALSE
+  cat("  !! A' non estimable (OOM/non-convergence) -> reporte tel quel, AUCUN chiffre fabrique.\n")
+} else {
+  attA <- as.data.table(summary(m_Ap, agg = "att")$coeftable, keep.rownames = "term")
+  setnames(attA, 2:5, c("estimate", "se", "stat", "p")); attA <- attA[term == "ATT"]
+  esA <- as.data.table(coeftable(m_Ap), keep.rownames = "term")
+  setnames(esA, 2:5, c("estimate", "se", "stat", "p"))
+  esA <- esA[grepl("year::", term)]
+  esA[, rel_time := as.integer(sub(".*year::(-?[0-9]+).*", "\\1", term))]
+  esA[, `:=`(ci_lo = estimate - 1.96 * se, ci_hi = estimate + 1.96 * se)]; setorder(esA, rel_time)
+  attA_post1 <- esA[rel_time >= 1, mean(estimate)]
+  cat(sprintf("  - A' ATT (PPML, post k>=0) = %.4f (se %.4f) | moyenne post k>=+1 = %.4f\n",
+              attA$estimate, attA$se, attA_post1))
+  print(esA[, .(rel_time, estimate = round(estimate, 4), se = round(se, 4))])
+  out_A <- rbindlist(list(
+    esA[, .(model = "Aprime_ppml_pkey", term = "event_time", rel_time, estimate, se, ci_lo, ci_hi)],
+    attA[, .(model = "Aprime_ppml_pkey", term = "ATT", rel_time = NA_integer_, estimate, se,
+             ci_lo = estimate - 1.96 * se, ci_hi = estimate + 1.96 * se)]), use.names = TRUE)
+  fwrite(out_A, file.path(PATH_TAB, "tab_sunab_pkey_ppml.csv"))
+  cat("  - ecrit tab_sunab_pkey_ppml.csv\n")
+}
+
+# ---- 5. DECOMPOSITION A -> A' -> B (overlay 3 courbes) -----------------------
+log_step("5. Decomposition A -> A' -> B (overlay 3 courbes).")
 pathA <- file.path(ANALYSIS_ROOT, "07_ppml", "tables", "tab_eventstudy_sunab.csv")
 have_A <- file.exists(pathA)
+LAB_A <- "A : PPML directed (07, MRT)"; LAB_AP <- "A' : PPML pkey (scale only)"; LAB_B <- "B : OLS pkey log(trade+1)"
+parts <- list()
 if (have_A) {
-  A <- fread(pathA)
-  A <- A[window == "2008_2023" & term == "event_time",
-         .(rel_time, estimate, ci_lo, ci_hi)]
-  A[, profil := "A : PPML directed (07, MRT FE)"]
+  A <- fread(pathA)[window == "2008_2023" & term == "event_time", .(rel_time, estimate, ci_lo, ci_hi)]
+  A[, profil := LAB_A]; parts[["A"]] <- A
 } else cat("  !! 07 event-study CSV introuvable :", pathA, "\n")
-B <- es[, .(rel_time, estimate, ci_lo, ci_hi)]; B[, profil := "B : OLS pkey log(trade+1)"]
-ov <- if (have_A) rbind(A, B) else B
-pal <- c("A : PPML directed (07, MRT FE)" = "#2166AC", "B : OLS pkey log(trade+1)" = "#B2182B")
+if (aprime_ok) { Ap <- esA[, .(rel_time, estimate, ci_lo, ci_hi)]; Ap[, profil := LAB_AP]; parts[["Ap"]] <- Ap }
+B <- es[, .(rel_time, estimate, ci_lo, ci_hi)]; B[, profil := LAB_B]; parts[["B"]] <- B
+ov <- rbindlist(parts, use.names = TRUE)
+ov[, profil := factor(profil, levels = c(LAB_A, LAB_AP, LAB_B))]
+pal <- setNames(c("#2166AC", "#1B7837", "#B2182B"), c(LAB_A, LAB_AP, LAB_B))
 p <- ggplot(ov, aes(rel_time, estimate, color = profil, fill = profil)) +
   geom_hline(yintercept = 0, lty = 2, color = "grey50") +
   geom_vline(xintercept = 0, lty = 3, color = "grey55") +
   geom_vline(xintercept = 8, lty = 3, color = "grey75") +
   annotate("text", x = 0, y = Inf, label = "onset (~2014)", vjust = 1.4, hjust = -0.05, size = 2.7, color = "grey45") +
   annotate("text", x = 8, y = Inf, label = "~2022 (2014 cohort)", vjust = 1.4, hjust = -0.02, size = 2.7, color = "grey55") +
-  geom_ribbon(aes(ymin = ci_lo, ymax = ci_hi), alpha = 0.10, color = NA) +
-  geom_line(linewidth = 0.6) + geom_point(size = 1.9) +
+  geom_ribbon(aes(ymin = ci_lo, ymax = ci_hi), alpha = 0.08, color = NA) +
+  geom_line(linewidth = 0.6) + geom_point(size = 1.8) +
   scale_x_continuous(breaks = seq(-5, 9, 1)) +
   scale_color_manual(values = pal) + scale_fill_manual(values = pal) +
   theme_minimal(base_size = 12) +
@@ -163,20 +237,25 @@ p <- ggplot(ov, aes(rel_time, estimate, color = profil, fill = profil)) +
         plot.subtitle = element_text(size = 10, color = "grey40"), legend.position = "bottom",
         plot.background = element_rect(fill = "white", color = NA),
         panel.background = element_rect(fill = "white", color = NA)) +
-  labs(title = "Sanctions event study: directed PPML (A) vs unordered-pair OLS (B)",
-       subtitle = "Qualitative bridge only: A->B varies scale (PPML->OLS), geometry (directed+MRT->pkey), and treatment definition AT ONCE.",
+  labs(title = "Decomposing the sanctions event study: A -> A' -> B",
+       subtitle = "A->A' = geometry+treatment bundle (directed+MRT -> pkey world). A'->B = pure scale (PPML -> OLS log+1, same panel).",
        x = "Years relative to sanction onset", y = "Effect on trade with Russia (semi-elasticity)",
        color = NULL, fill = NULL,
-       caption = "A = 07_ppml full window 2008-2023 (directed non-commercial, exp^year+imp^year+pair). B = OLS log(trade+1), pkey + year FE, pair-clustered.")
+       caption = "A = 07_ppml full window 2008-2023 (directed, exp^year+imp^year+pair). A'/B = pkey + year FE, pair-clustered, same panel/treatment/window.")
 ggsave(file.path(PATH_FIG, "es_fig_sunab_ppml_vs_ols.png"), p, width = 10, height = 6, dpi = 300)
-cat("  - ecrit es_fig_sunab_ppml_vs_ols.png", if (!have_A) "(B seul : A indisponible)" else "", "\n")
+cat("  - ecrit es_fig_sunab_ppml_vs_ols.png (3 courbes)\n")
 
 cat("\n=============================================================\n")
 cat("RECAP — 08_sunab_ols.R\n")
-cat(sprintf("  panel pkey : %d obs, %d paires (apres exclusion reporting-gap %s)\n",
+cat(sprintf("  panel pkey (B/A') : %d obs, %d paires (exclusion %s)\n",
             nrow(pk), uniqueN(pk$pkey), paste(pairs_reporting_gap, collapse = ",")))
-cat(sprintf("  ATT OLS (post k>=0) = %.4f ; moyenne post k>=+1 = %.4f\n", att$estimate, att_post1))
-cat(sprintf("  extinctions sous traitement : %d (Russie %d) ; reporting-gap exclus : %d paire(s)\n",
-            nrow(induced), induced[rus == TRUE, .N], length(pairs_reporting_gap)))
+cat(sprintf("  ATT  B  (OLS log+1, post k>=0) = %.4f\n", att$estimate))
+if (aprime_ok) cat(sprintf("  ATT  A' (PPML pkey,  post k>=0) = %.4f\n", attA$estimate))
+cat(sprintf("  ATT  A  (PPML dirige 07 full)  = %s\n",
+            if (have_A) sprintf("%.4f", fread(pathA)[window=="2008_2023" & term=="ATT", estimate]) else "n/a"))
+cat("  DECOMPOSITION : A->A' = bundle geometrie/traitement ; A'->B = echelle pure.\n")
+cat(sprintf("  tri extinctions Russie : %d gardees, %d flaguees (exclusion C = %s)\n",
+            tri[grepl("^KEEP", verdict), .N], tri[grepl("^FLAG", verdict), .N],
+            paste(pairs_reporting_gap, collapse = ",")))
 cat("=============================================================\n")
 log_step("08_sunab_ols.R termine.")

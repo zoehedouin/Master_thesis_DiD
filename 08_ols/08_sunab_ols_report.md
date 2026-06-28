@@ -5,8 +5,10 @@
 > `log(trade+1)`**, panel **paire NON ORDONNÉE (pkey)**, FE `pkey + year`, cluster
 > paire. feols gère les FE creux → panel pkey **COMPLET** (aucun sous-échantillonnage ;
 > c'est une contrainte du dCDH, pas de feols). Vraie estimation, chiffres réels.
-> Sorties : [`tables/tab_sunab_ols.csv`](tables/tab_sunab_ols.csv),
-> [`figures/es_fig_sunab_ppml_vs_ols.png`](figures/es_fig_sunab_ppml_vs_ols.png).*
+> Sorties : [`tables/tab_sunab_ols.csv`](tables/tab_sunab_ols.csv) (B),
+> [`tables/tab_sunab_pkey_ppml.csv`](tables/tab_sunab_pkey_ppml.csv) (A′),
+> [`tables/tab_reporting_gap_triage.csv`](tables/tab_reporting_gap_triage.csv) (tri),
+> [`figures/es_fig_sunab_ppml_vs_ols.png`](figures/es_fig_sunab_ppml_vs_ols.png) (A/A′/B).*
 
 ## Panel (verbatim §4.1)
 `sanctions_panel.parquet` ; pkey non ordonnée ; 2008-2023 ; `trade_tot =
@@ -42,43 +44,57 @@ En clair : sur le panel monde pkey, l'allumage des sanctions (onset, ~2014 domin
 réduit le commerce bilatéral d'environ **−10 %**, effet modéré et **plat dans le temps**
 (pas de creusement vers le haut k).
 
-## Comparaison A (07) vs B — pont QUALITATIF (caveat explicite)
-| | A : PPML **dirigé** (07, full 2008-2023) | B : OLS **pkey** `log(trade+1)` |
-|---|---:|---:|
-| ATT | **−0.600** (se 0.055) | **−0.096** (se 0.041) |
-| k=0 | −0.105 | −0.163 |
-| k=5 (binné) | **−0.889** | −0.068 |
+## Décomposition MESURÉE A → A′ → B (addendum A′)
+A′ = **PPML-sunab sur le MÊME panel pkey que B** (même cohortes, mêmes bornes ±5, même
+exclusion BLR_RUS, mêmes left-censored exclus) : **seule l'échelle change** vs B (fepois /
+zéros natifs au lieu de feols / `log(trade+1)`). Sortie : `tab_sunab_pkey_ppml.csv`.
 
-Figure `es_fig_sunab_ppml_vs_ols.png` : les deux profils en overlay.
+| | A : PPML **dirigé** (07, full) | A′ : PPML **pkey** | B : OLS **pkey** `log+1` |
+|---|---:|---:|---:|
+| **ATT** | **−0.601** (se 0.055) | **−0.306** (se 0.052) | **−0.096** (se 0.041) |
+| k=0 | −0.105 | −0.120 | −0.163 |
+| k=5 (binné) | −0.889 | **−0.459** | −0.068 |
 
-**⚠️ Caveat de comparabilité (central).** Passer de A à B fait varier **SIMULTANÉMENT
-trois axes** :
-1. **Échelle** : PPML (multiplicatif, Poisson) → **OLS sur `log(trade+1)`**.
-2. **Géométrie** : dyade **dirigée** + FE exportateur-temps / importateur-temps
-   (résistance multilatérale, MRT) → **paire non ordonnée (pkey)** + FE `pkey + year`
-   (**sans MRT**).
-3. **Définition du traitement** : sanction **non-commerciale dirigée partenaire→Russie**
-   → **toute sanction** (`n_active_core>0`) sur la paire non ordonnée (deux directions,
-   tous types, **toutes les dyades sanctionnant-sanctionné du monde**, pas seulement la
-   Russie).
+**Décomposition de l'écart (ATT) :**
+- **A → A′ = +0.295** (de −0.601 à −0.306) = effet du **bundle géométrie + traitement**
+  (dirigé + MRT → pkey « monde toutes-sanctions »).
+- **A′ → B = +0.210** (de −0.306 à −0.096) = effet de l'**ÉCHELLE PURE** (PPML → OLS
+  `log+1`, **même panel**).
 
-→ A→B est donc un **pont qualitatif de bout en bout**, **PAS** une mesure propre de la
-seule **linéarité** (échelle). L'écart A (−0.60) vs B (−0.10) **mélange** les trois
-effets — l'essentiel de la dilution vient de la géométrie pkey-sans-MRT et du traitement
-« monde toutes-sanctions » (qui noie l'effet Russie dans 5 509 paires ever-traitées
-mondiales). La comparaison **propre** de l'échelle (A′ : même géométrie/traitement, seul
-PPML→OLS) est **abandonnée** ; l'**isolation de la STRUCTURE** viendra du saut **B→C**
-(`dist_lag_het`, script suivant).
+**Conclusion (les chiffres tranchent — l'affirmation précédente est FALSIFIÉE).** La
+dilution **n'est PAS « surtout » la géométrie/traitement** : les deux axes pèsent
+**à peu près moitié-moitié** (≈ 0.30 vs ≈ 0.21). **Le passage PPML → OLS `log+1` est
+conséquent** : il réduit l'ATT de moitié sur le même panel, et **bien davantage dans la
+queue d'escalade** (k=5 : A′ −0.459 vs B −0.068 — PPML pondère les gros flux que
+`log+1` écrase). → **Caveat sérieux pour B ET C** (tous deux en échelle OLS-log) : ils
+**sous-estiment** l'effet multiplicatif, surtout aux fortes intensités. La comparaison
+propre de l'échelle n'est donc **plus abandonnée** : elle est ici mesurée (A′).
 
-**B est structurellement aveugle à 2022.** Le traitement Sun-Abraham est **binaire
-absorbant** à l'onset (≈2014 pour la cohorte dominante) ; 2022 = **post-onset** (rel ≈ +8
-pour la cohorte 2014, **absorbé dans le bin +5**). B ne peut donc pas distinguer
-l'**intensification** 2022 de l'onset 2014 — c'est précisément ce que **C** (dist_lag_het,
-effet contemporain vs retardés) capturera.
+Figure `es_fig_sunab_ppml_vs_ols.png` : les **trois** profils A / A′ / B en overlay.
+
+**Pré-tendances.** A′ a des leads **plats** (−5 = −0.016, −4 = −0.003, −3/−2 ≈ +0.017,
+n.s.). → Le lead **−5 de B** (−0.107, IC [−0.212 ; −0.002], marginalement négatif alors
+que −4/−3/−2 sont plats) est un **bruit de lead lointain au bin-bord ±5**, PAS une
+pré-tendance (A′, propre, le confirme).
+
+**B est structurellement aveugle à 2022.** Sun-Abraham est **binaire absorbant** à l'onset
+(≈2014 dominant) ; 2022 = **post-onset** (rel ≈ +8, **absorbé dans le bin +5**). B ne
+distingue pas l'**intensification** 2022 de l'onset 2014 — c'est ce que **C**
+(`dist_lag_het`, contemporain vs retardés) capture.
+
+## Tri des extinctions Russie (alimente l'exclusion de C)
+`tab_reporting_gap_triage.csv` : sur les **12** extinctions Russie (positif pré → zéro
+post), critère reproductible = le partenaire non-russe garde-t-il un **commerce mondial
+BACI** post-2022 (présent = miroir reconstruit) ? **11 partenaires gardent 36–157 % de
+leur commerce mondial → collapses RÉELS → GARDÉS** ; seul **BLR_RUS FLAGUÉ** (Russie +
+Biélorussie toutes deux COMTRADE-dark pour ce flux ; 33,5 Md → 0 économiquement
+impossible). De plus, les 11 sont **tier_post ≤ 2** (hors headline 6+) → impact
+second-ordre sur C. **Exclusion de C = `c("BLR_RUS")`** (niveau paire, jamais pays).
 
 ## Réserves / suite
-- Le choix de transformation reste **`log(trade+1)`** (cf. `08_zeros_report.md` :
-  IHS ≈ identique, cor 0.9994 ; positifs-seuls biaiserait par sélection).
-- Prochain script : **C = dist_lag_het** (§4.2, skeleton conservé dans `08_ols.R`) pour
-  séparer l'effet contemporain (choc 2022) des effets accumulés depuis 2014, sur le même
-  panel pkey + la même exclusion `pairs_reporting_gap`.
+- Transformation : **`log(trade+1)`** conservée (cf. `08_zeros_report.md` : IHS ≈ identique,
+  cor 0.9994 ; positifs-seuls biaiserait par sélection) — mais voir le caveat d'échelle
+  ci-dessus : l'OLS-log sous-estime vs PPML.
+- **C = `dist_lag_het`** (`08_distlag.R`, package réel **DistLagHet**) : sépare l'effet
+  contemporain (choc 2022) des retardés, même panel pkey + même exclusion. Voir
+  `08_distlag_report.md`.
