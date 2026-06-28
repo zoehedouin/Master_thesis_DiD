@@ -1,0 +1,98 @@
+section,label,metric,value,note
+0_panel,obs_pkey_year,n,425040,
+0_panel,pairs,n,26565,
+0_panel,pairs_ever_treated,n,5509,
+0_panel,pairs_never_treated,n,21056,
+0_panel,window,years,,2008-2023
+2_units_positive_flows,min,trade_value,0.001,BACI ~ thousands USD (to confirm)
+2_units_positive_flows,p1,trade_value,0.055,BACI ~ thousands USD (to confirm)
+2_units_positive_flows,p5,trade_value,0.783050000000001,BACI ~ thousands USD (to confirm)
+2_units_positive_flows,median,trade_value,3194.3925,BACI ~ thousands USD (to confirm)
+2_units_positive_flows,plus1_vs_median,pct,0.0313048568702813,weight of +1 vs median positive flow
+2_units_positive_flows,plus1_vs_p5,pct,127.705765915331,weight of +1 vs p5 positive flow
+3_zeros_global,all,share_zero,0.315589121023904,
+3_zeros_global,all,n_zero,134138,
+3_zeros_global,all,n_obs,425040,
+3_zeros_by_year,2008,share_zero,0.334199134199134,n_zero=8878 / n_obs=26565
+3_zeros_by_year,2009,share_zero,0.337549407114625,n_zero=8967 / n_obs=26565
+3_zeros_by_year,2010,share_zero,0.330848861283644,n_zero=8789 / n_obs=26565
+3_zeros_by_year,2011,share_zero,0.326708074534162,n_zero=8679 / n_obs=26565
+3_zeros_by_year,2012,share_zero,0.322567287784679,n_zero=8569 / n_obs=26565
+3_zeros_by_year,2013,share_zero,0.314888010540184,n_zero=8365 / n_obs=26565
+3_zeros_by_year,2014,share_zero,0.322567287784679,n_zero=8569 / n_obs=26565
+3_zeros_by_year,2015,share_zero,0.315151515151515,n_zero=8372 / n_obs=26565
+3_zeros_by_year,2016,share_zero,0.307095802747977,n_zero=8158 / n_obs=26565
+3_zeros_by_year,2017,share_zero,0.300357613401092,n_zero=7979 / n_obs=26565
+3_zeros_by_year,2018,share_zero,0.298964803312629,n_zero=7942 / n_obs=26565
+3_zeros_by_year,2019,share_zero,0.305138339920949,n_zero=8106 / n_obs=26565
+3_zeros_by_year,2020,share_zero,0.31853943158291,n_zero=8462 / n_obs=26565
+3_zeros_by_year,2021,share_zero,0.299680030114813,n_zero=7961 / n_obs=26565
+3_zeros_by_year,2022,share_zero,0.303067946546207,n_zero=8051 / n_obs=26565
+3_zeros_by_year,2023,share_zero,0.31210239036326,n_zero=8291 / n_obs=26565
+3_zeros_by_tier,0,share_zero,0.331294398351499,n_zero=122188 / n_obs=368820
+3_zeros_by_tier,1,share_zero,0.170360963595782,n_zero=4427 / n_obs=25986
+3_zeros_by_tier,2,share_zero,0.251918629980898,n_zero=7517 / n_obs=29839
+3_zeros_by_tier,3,share_zero,0.0151898734177215,n_zero=6 / n_obs=395
+3_zeros_by_evertreated,never_treated,share_zero,0.348175698138298,n_zero=117299 / n_obs=336896
+3_zeros_by_evertreated,ever_treated,share_zero,0.191039662370666,n_zero=16839 / n_obs=88144
+3_zeros_russia_global,russia_all,share_zero,0.0972826086956522,230 russia pairs
+3_zeros_russia_by_year,2008,share_zero,0.0869565217391304,n_zero=20 / n_obs=230
+3_zeros_russia_by_year,2009,share_zero,0.0956521739130435,n_zero=22 / n_obs=230
+3_zeros_russia_by_year,2010,share_zero,0.104347826086957,n_zero=24 / n_obs=230
+3_zeros_russia_by_year,2011,share_zero,0.0826086956521739,n_zero=19 / n_obs=230
+3_zeros_russia_by_year,2012,share_zero,0.0608695652173913,n_zero=14 / n_obs=230
+3_zeros_russia_by_year,2013,share_zero,0.0608695652173913,n_zero=14 / n_obs=230
+3_zeros_russia_by_year,2014,share_zero,0.0565217391304348,n_zero=13 / n_obs=230
+3_zeros_russia_by_year,2015,share_zero,0.0608695652173913,n_zero=14 / n_obs=230
+3_zeros_russia_by_year,2016,share_zero,0.0521739130434783,n_zero=12 / n_obs=230
+3_zeros_russia_by_year,2017,share_zero,0.0565217391304348,n_zero=13 / n_obs=230
+3_zeros_russia_by_year,2018,share_zero,0.0565217391304348,n_zero=13 / n_obs=230
+3_zeros_russia_by_year,2019,share_zero,0.0391304347826087,n_zero=9 / n_obs=230
+3_zeros_russia_by_year,2020,share_zero,0.0608695652173913,n_zero=14 / n_obs=230
+3_zeros_russia_by_year,2021,share_zero,0.0521739130434783,n_zero=12 / n_obs=230
+3_zeros_russia_by_year,2022,share_zero,0.3,n_zero=69 / n_obs=230
+3_zeros_russia_by_year,2023,share_zero,0.330434782608696,n_zero=76 / n_obs=230
+4_pair_structure,always_positive,n_pairs,13200,49.7% of pairs
+4_pair_structure,always_zero,n_pairs,3439,12.9% of pairs
+4_pair_structure,intermittent,n_pairs,9926,37.4% of pairs
+4_pair_structure_x_status,control:always_positive,n_pairs,9784,
+4_pair_structure_x_status,control:always_zero,n_pairs,3147,
+4_pair_structure_x_status,control:intermittent,n_pairs,8125,
+4_pair_structure_x_status,ever_treated:always_positive,n_pairs,3416,
+4_pair_structure_x_status,ever_treated:always_zero,n_pairs,292,
+4_pair_structure_x_status,ever_treated:intermittent,n_pairs,1801,
+4_pair_structure_russia,always_positive,n_pairs,150,
+4_pair_structure_russia,always_zero,n_pairs,3,
+4_pair_structure_russia,intermittent,n_pairs,77,
+5_induced_zeros,ever_treated_evaluable,n_pairs,4947,
+5_induced_zeros,induced_pos_to_zero,n_pairs,375,7.58% of evaluable ever-treated
+5_induced_zeros,induced_russia,n_pairs,12,
+5_induced_zeros_by_tier,0,n_pairs,76,
+5_induced_zeros_by_tier,1,n_pairs,116,
+5_induced_zeros_by_tier,2,n_pairs,183,
+5_induced_zeros_russia_pairs,BLR_RUS,pre_mean_2018_2021,33506383.4075,tier_post=1
+5_induced_zeros_russia_pairs,RUS_SDN,pre_mean_2018_2021,744686.21175,tier_post=2
+5_induced_zeros_russia_pairs,RUS_YEM,pre_mean_2018_2021,332561.502,tier_post=2
+5_induced_zeros_russia_pairs,LBY_RUS,pre_mean_2018_2021,200669.0675,tier_post=1
+5_induced_zeros_russia_pairs,IRQ_RUS,pre_mean_2018_2021,178201.73925,tier_post=1
+5_induced_zeros_russia_pairs,AFG_RUS,pre_mean_2018_2021,153054.76425,tier_post=1
+5_induced_zeros_russia_pairs,PRK_RUS,pre_mean_2018_2021,30930.25025,tier_post=2
+5_induced_zeros_russia_pairs,HTI_RUS,pre_mean_2018_2021,12093.07325,tier_post=1
+5_induced_zeros_russia_pairs,RUS_SOM,pre_mean_2018_2021,7055.4735,tier_post=2
+5_induced_zeros_russia_pairs,ERI_RUS,pre_mean_2018_2021,5504.19425,tier_post=0
+5_induced_zeros_russia_pairs,RUS_SSD,pre_mean_2018_2021,3574.19125,tier_post=2
+5_induced_zeros_russia_pairs,RUS_SLE,pre_mean_2018_2021,1914.45125,tier_post=0
+6_transform,obs_total,n,425040,
+6_transform,obs_kept_by_ihs_lost_by_logpos,n,134138,= number of zeros
+6_transform,cor_log1p_ihs_global,cor,0.999433477315202,
+6_transform,cor_log1p_logpos_positives,cor,0.994443056955341,
+6_transform_left_tail,p10_positive,threshold,4.584,
+6_transform_left_tail,n_obs_tail,n,29092,
+6_transform_left_tail,mean_abs_gap_log1p_ihs,value,0.189032942997515,
+6_transform_left_tail,mean_log1p,value,0.676808604107767,
+6_transform_left_tail,mean_ihs,value,0.865841547105282,
+6_transform_left_tail,mean_logpos,value,-0.591900246076066,
+6_transform_left_tail,zeros_log1p_value,value,0,log(0+1)=0
+6_transform_left_tail,zeros_ihs_value,value,0,asinh(0)=0
+6_transform_left_tail,zeros_logpos_value,value,,log(0) undefined -> dropped
+6_transform,mean_gap_ihs_minus_log1p_top10pct,value,0.693146658646795,approx log(2)=0.693 for large flows

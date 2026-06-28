@@ -244,3 +244,16 @@ squelette jamais implémente) est DISSOUTE ; tout descend d'un cran.
   panel Russie-centré (chaque partenaire dans 1 seule dyade) ; FE corrigés
   `pkey + rus_as_exporter^year` testés OK. Réécriture de `07_ppml` en attente de
   validation de la spec FE.
+
+## Réorg #6 (2026-06-28) — `08_dcdh` → `08_ols` (monde OLS/log)
+- `git mv` du dossier `08_dcdh/`→`08_ols/` et du script `08_dcdh.R`→`08_ols.R`
+  (PART="08_ols", routage `out_*` adapté ; skeleton `dist_lag_het` intact). Section 08
+  recadrée « monde OLS/log de l'intensité » (≠ PPML dirigé du 07).
+- Diagnostic zéros (`08_zeros_diagnostic.R` + `08_zeros_report.md` +
+  `tab_zeros_diagnostic.csv`) rapatrié dans `08_ols/` (PART corrigé).
+- **NEW** `08_ols/08_sunab_ols.R` : event study Sun-Abraham **OLS** `log(trade+1)`,
+  panel pkey complet, exclusion auditable `pairs_reporting_gap` (ancre BLR_RUS) ;
+  sorties `tab_sunab_ols.csv`, `es_fig_sunab_ppml_vs_ols.png`, `08_sunab_ols_report.md`.
+- Références de chemin `08_dcdh`→`08_ols` corrigées partout (00_setup, 06, 07, 09, 10,
+  README_pipeline, report_sanctions_synthese) ; les **lignes d'historique ci-dessus
+  conservent** l'ancien nom (trace de la réorg #5).

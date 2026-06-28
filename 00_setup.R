@@ -91,7 +91,7 @@ dir.create(PATH_CLEAN, showWarnings = FALSE, recursive = TRUE)
 # (ancien theme : "EventStudy", "Estimation"...) est ACCEPTE pour compatibilite
 # mais IGNORE : le routage se fait par PART. Consequence : aucun site d'appel
 # out_*() n'a besoin d'etre modifie, et le split EventStudy entre 07 et 08 se
-# fait automatiquement (07 a PART="07_ppml", 08 a PART="08_dcdh").
+# fait automatiquement (07 a PART="07_ppml", 08 a PART="08_ols").
 .part_dir <- function(kind) {
   if (!exists("PART", inherits = TRUE) || is.null(PART) || !nzchar(PART))
     stop("00_setup.R : variable PART non definie. Ajoutez PART <- \"NN_partie\" ",

@@ -16,7 +16,7 @@
 # Choix d'estimateur (delibere) : Sun & Abraham (2021) est le seul event-study
 # robuste a l'heterogeneite qui tourne NATIVEMENT en PPML (zeros gardes,
 # semi-elasticites, benchmark GSDB-R4). Callaway-Sant'Anna et dCDH sont lineaires
-# (logs) -> hors gravite ; dCDH est reserve a l'intensite 2022 en 08_dcdh.
+# (logs) -> hors gravite ; dCDH est reserve a l'intensite 2022 en 08_ols.
 #
 # VALIDITE AVANT EFFET : on lit (i) balance/sorting (-> 06_descriptives_did),
 # (ii) pre-tendances (incond. + cond. energie), (iii) HonestDiD, PUIS seulement
@@ -322,7 +322,7 @@ run_2x2_pretrends(
 
 log_step("Section 5 : event study Sun & Abraham (fenetre propre 2010-2021 + full 2008-2023).")
 # PRINCIPAL = fenetre 2010-2021 : exclut les leads de crise (2008-2009) ET les
-# lags de guerre (2022-2023, qui appartiennent a l'intensite -> 08_dcdh). Les
+# lags de guerre (2022-2023, qui appartiennent a l'intensite -> 08_ols). Les
 # onsets hors fenetre deviennent CONTROLES ; left-censored (onset < y0+1) exclus.
 # => effet 2014 NET, non contamine. SECONDAIRE = 2008-2023 (transparence guerre).
 run_es <- function(y0, y1, blo, bhi, label) {
@@ -381,7 +381,7 @@ ggsave(file.path(PATH_FIG, "sanctions_event_study.png"),
        width = 10, height = 6, dpi = 300)
 ggsave(file.path(PATH_FIG, "sanctions_event_study_full_window.png"),
        mk_es_plot(es_full$es, "Effect on trade with Russia (2008-2023, including the war years)",
-                  "Secondary view: the +5 bin absorbs 2022-2023 (intensification -> 08_dcdh). Read with this caveat."),
+                  "Secondary view: the +5 bin absorbs 2022-2023 (intensification -> 08_ols). Read with this caveat."),
        width = 10, height = 6, dpi = 300)
 
 
@@ -591,7 +591,7 @@ cat(sprintf("  Statique (treated_post)        : %.4f (p=%.4f)\n",
             static_csv[term=="treated_post" & model=="static_treated_post", estimate],
             static_csv[term=="treated_post" & model=="static_treated_post", p]))
 cat(sprintf("  ATT 2014 PROPRE (2010-2021)    : %.4f (p=%.4f)\n", att_clean$estimate, att_clean$p))
-cat(sprintf("  ATT full (2008-2023, guerre)   : %.4f (p=%.4f) [caveat : +5 absorbe 2022-23 -> 08_dcdh]\n",
+cat(sprintf("  ATT full (2008-2023, guerre)   : %.4f (p=%.4f) [caveat : +5 absorbe 2022-23 -> 08_ols]\n",
             att_full$estimate, att_full$p))
 cat("\n== Figures ==\n"); print(list.files(PATH_FIG))
 cat("== Tables ==\n");  print(list.files(PATH_TAB))

@@ -521,7 +521,7 @@ safely("did_balance_smd", quote({
 #    (sanctioned_post2022 == 1 & sanctioned_post2014 == 0) est VIDE : les 43
 #    sanctionneurs de 2022 sont EXACTEMENT ceux de 2014. => Cote sanctions,
 #    2022 = INTENSIFICATION (plus de mesures par les memes pays), PAS un nouvel
-#    onset ; l'heterogeneite de cohorte est une question d'INTENSITE -> 08_dcdh.
+#    onset ; l'heterogeneite de cohorte est une question d'INTENSITE -> 08_ols.
 #    (Cote condamnation, la vague 2022 ajoute ~47 nouveaux condamneurs, pays plus
 #    petits / lointains que les condamneurs de 2014 ; non tabule ici.)
 

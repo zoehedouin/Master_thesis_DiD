@@ -1,5 +1,5 @@
 # =============================================================================
-# 08_dcdh.R — fusion of 11 + 11b + 11c + 11d, + skeleton dist_lag_het
+# 08_ols.R — fusion of 11 + 11b + 11c + 11d, + skeleton dist_lag_het
 #             (feuille de route §4).
 # -----------------------------------------------------------------------------
 # §4.1  AVSQ : effet de l'INTENSITE des sanctions (dose) sur le commerce
@@ -43,7 +43,7 @@ local({
     stop("00_setup.R introuvable en remontant depuis ", getwd())
   source(file.path(.d, "00_setup.R"))  # local=FALSE -> objets dans .GlobalEnv
 })
-PART <- "08_dcdh"   # co-localisation des sorties de cette partie (out_*)
+PART <- "08_ols"   # co-localisation des sorties de cette partie (out_*)
 
 # ---- Echantillonnage des controles (contrainte memoire 8 Go) ---------------
 # Les scripts 11* sous-echantillonnent les paires jamais-traitees (controles)
@@ -63,7 +63,7 @@ SAMPLE_CONTROLS <- TRUE   # FALSE = run full sample on a bigger machine (no cont
 # les placebos, onset 2014, escalade 2022-2023). VERBATIM des scripts 11*.
 YR_MIN <- 2008L; YR_MAX <- 2023L; N_CTRL <- 4000L; EFF <- 4L; PLA <- 2L
 
-# Sorties co-localisees dans 08_dcdh/{tables,figures} (out_* routent par PART).
+# Sorties co-localisees dans 08_ols/{tables,figures} (out_* routent par PART).
 PATH_TAB <- out_tab("EventStudy")
 PATH_FIG <- out_fig("EventStudy")
 

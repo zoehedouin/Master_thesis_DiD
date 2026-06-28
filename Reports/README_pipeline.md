@@ -42,7 +42,10 @@ sous `Rscript` comme en `source()` interactif.
 | 06 | `06_descriptives/06_descriptives.R` | **fusion** (`03a+03b+03c`) | §1 descriptives (socle général) | `06_descriptives/{figures,tables,maps}/` |
 | 06b | `06_descriptives_did/06_descriptives_did.R` | **NEW** | §1 descriptives (bloc DiD Russie) | `06_descriptives_did/{figures,tables,maps}/` (préfixe `did_`) |
 | 07 | `07_ppml/07_ppml.R` | **réécrit à neuf** (Russie-centré) | §2-3 PPML : statique, type, 2×2 ONU, Sun-Abraham, pré-tendances cond. énergie, HonestDiD | `07_ppml/{figures,tables}/` |
-| 08 | `08_dcdh/08_dcdh.R` | **fusion** (`11`+`11b`+`11c`+`11d`) + skel. `dist_lag_het` | §4 intensité dCDH | `08_dcdh/{figures,tables}/` |
+| 08 | `08_ols/` (monde OLS/log, ≠ PPML dirigé du 07) | section | §4 intensité | `08_ols/{figures,tables}/` |
+| 08a | `08_ols/08_ols.R` | **fusion** (`11`+`11b`+`11c`+`11d`) + skel. `dist_lag_het` | §4.1 dCDH intensité (paliers) | dCDH event study, by-tier, robustesses |
+| 08b | `08_ols/08_zeros_diagnostic.R` | diagnostic | §4 zéros (avant figer la transformation) | `tab_zeros_diagnostic.csv`, `08_zeros_report.md` |
+| 08c | `08_ols/08_sunab_ols.R` | **NEW** | §4 Sun-Abraham OLS (pkey, log+1) | `tab_sunab_ols.csv`, `es_fig_sunab_ppml_vs_ols.png` |
 | 09 | `09_decomposition/09_decomposition.R` | **NEW (squelette)** | §5 stratégique / non-stratégique | `09_decomposition/{figures,tables}/` |
 | 10 | `10_robustness/10_robustness.R` | **NEW (squelette)** | §6 placebos, fenêtres, triangulation, sender | `10_robustness/{figures,tables}/` |
 
@@ -59,7 +62,7 @@ bloc `## TODO (feuille de route §X)`. Aucun résultat n'y est fabriqué.
 > **`EventStudy` scindé par producteur** : les sorties Sun-Abraham / statique /
 > validation du traitement (`*sunab*`, `*static_did*`, `*treatment_validation*`)
 > vont en `07_ppml/` ; les sorties d'intensité dCDH (`*dcdh*`, `*tier*`,
-> `*russia_cases*`) vont en `08_dcdh/`. Le routage est automatique via `PART`.
+> `*russia_cases*`) vont en `08_ols/`. Le routage est automatique via `PART`.
 
 ## Ordre d'exécution
 
@@ -111,5 +114,5 @@ réutilisent les meilleures specs de `07`/`08`.
   `VARIABLES.md`, `report_sanctions_synthese.md`, `annexe_ipd_iv.md`, `_archive/`.
 - **Par partie** : `06_descriptives/06_report.md`,
   `06_descriptives_did/06_descriptives_did_report.md`, `07_ppml/07_report.md`,
-  `08_dcdh/08_report.md` (ex-`report_intensity_dcdh_phase3.md`),
+  `08_ols/08_report.md` (ex-`report_intensity_dcdh_phase3.md`),
   `09_decomposition/09_report.md`, `10_robustness/10_report.md`.

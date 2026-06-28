@@ -4,12 +4,12 @@
 > l'event study **mondial pré-refonte** (ex-`08_ppml`, désormais archivé :
 > `_archive/fused_sources/08_ppml_legacy.R` et `_archive/output_legacy/08_ppml/`).
 > Le PPML a été **réécrit à neuf en Russie-centré** dans **`07_ppml`** (sorties à
-> venir) ; l'intensité dCDH est désormais **`08_dcdh`**. Les chemins/numéros cités
+> venir) ; l'intensité dCDH est désormais **`08_ols`**. Les chemins/numéros cités
 > plus bas sont **historiques** jusqu'à régénération.
 >
 > *Synthèse transversale 07+08 (reste **centrale** dans `Reports/`). Scripts
 > actifs : `03_sanctions/03_build_sanctions.R`, `07_ppml/07_ppml.R`,
-> `08_dcdh/08_dcdh.R`. Carte du pipeline : [`README_pipeline.md`](README_pipeline.md).*
+> `08_ols/08_ols.R`. Carte du pipeline : [`README_pipeline.md`](README_pipeline.md).*
 
 *Date : 2026-06-25. Objet : effet causal des sanctions (choc géopolitique) sur le
 commerce bilatéral, cadre gravité PPML. Données : `iv_panel.parquet` (enrichi),
@@ -184,17 +184,17 @@ cluster = paire ; fenêtre 2008-2023 ; `effects = 4`, `placebo = 2`. Dose
 **Scripts** : traitement = `03_sanctions/03_build_sanctions.R` (ex-`06`, scindé) ;
 PPML/event study **mondial pré-refonte** = `_archive/fused_sources/08_ppml_legacy.R`
 (remplacé par le PPML Russie-centré `07_ppml/07_ppml.R`) ; intensité dCDH =
-`08_dcdh/08_dcdh.R` (fusion `11`+`11b`+`11c`+`11d`).
+`08_ols/08_ols.R` (fusion `11`+`11b`+`11c`+`11d`).
 
 **Figures** (legacy, archivées) : `_archive/output_legacy/08_ppml/figures/es_fig01_sunab_2014.png` ;
-(actif) `08_dcdh/figures/es_fig02_dcdh_tiers.png`.
+(actif) `08_ols/figures/es_fig02_dcdh_tiers.png`.
 
 **Tables** — legacy `_archive/output_legacy/08_ppml/tables/` : `tab_treatment_validation.csv`
-(+ `_meta`), `tab_static_did.csv`, `tab_eventstudy_sunab.csv` ; actif `08_dcdh/tables/` :
+(+ `_meta`), `tab_static_did.csv`, `tab_eventstudy_sunab.csv` ; actif `08_ols/tables/` :
 `tab_dcdh_by_tier.csv`, `tab_dcdh_robustness.csv`, `tab_russia_cases_by_type.csv`.
 
 **Rapports** : `_archive/output_legacy/08_ppml/08_report.md` (ex-`report_eventstudy_phase1.md`),
-`08_dcdh/08_report.md` (ex-`report_intensity_dcdh_phase3.md`), et la présente
+`08_ols/08_report.md` (ex-`report_intensity_dcdh_phase3.md`), et la présente
 synthèse (`Reports/report_sanctions_synthese.md`).
 
 **Données** : `Data/Clean/iv_panel.parquet` (régénéré, 33 colonnes ;

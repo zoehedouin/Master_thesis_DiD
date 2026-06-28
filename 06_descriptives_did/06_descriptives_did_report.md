@@ -90,7 +90,7 @@ plutôt qu'une coupe Russie-restreinte.
 **Cohortes 2022 — pas de table dédiée, le finding tient en une ligne** (consigné en
 commentaire dans le script) : côté **sanctions**, il n'y a **AUCUN nouvel État
 sanctionneur en 2022** (les 43 de 2022 = ceux de 2014) → **2022 = intensification,
-pas onset** ; l'hétérogénéité de cohorte est une question d'**intensité** (`08_dcdh`,
+pas onset** ; l'hétérogénéité de cohorte est une question d'**intensité** (`08_ols`,
 cf. aussi `did_fig02`). Côté **condamnation**, la vague 2022 ajoute ~47 nouveaux
 condamneurs (pays plus petits/lointains que ceux de 2014) — sélection à garder en tête.
 
