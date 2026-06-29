@@ -114,8 +114,29 @@ un effet par niveau. On corrige avec deux lectures (script `11c`) :
   l'escalade lourde en général, dont Russie-2022 est une instance (147 paires →
   IC larges). Isoler Russie-2022 seule = cohorte spécifique (Phase 2).
 
-Figure : `Output/Figures/EventStudy/es_fig02_dcdh_tiers.png` (onset vs escalade
-lourde). Table : `Output/Tables/EventStudy/tab_dcdh_by_tier.csv` (normalisé + 3 seuils).
+Figure : `es_fig02_dcdh_tiers.png` (onset vs escalade lourde). Table :
+`tab_dcdh_by_tier.csv` (normalisé + 3 seuils).
+
+**Figures ajoutées (script `08_figures.R`, lecture seule des CSV) :**
+- **`figures/es_fig_dose_gradient.png`** — gradient **transversal** des ATE par palier
+  (IC 95 %) : par cran de dose **−0.080**, onset core≥1 **−0.176**, intermédiaire
+  core≥2 **−0.066 (n.s.**, IC [−0.147 ; +0.016]**)**, escalade lourde core≥6 **−0.434**
+  (**≈ 2.5×** l'onset). Lecture : l'effet **croît fortement avec le palier** ; le palier
+  intermédiaire est bruité/non significatif.
+- **`figures/es_fig_russia_escalation_by_type.png`** — escalade des sanctions russes
+  par type (GSDB v4) : plateau plat 2014-2021 (financier ~9-10, commercial ~8-9) puis
+  **bond ~×4-5 en 2022** (financier **10→40**, commercial **9→40**, tous types
+  simultanément) ; **embargo complet `trade_complete` ≤ 1** sur toute la période →
+  **intensification large** dans des canaux déjà actifs, **pas un embargo total** ni un
+  nouvel onset. (Années 2012-2013 absentes de la source.)
+
+> **Complémentarité es_fig02 ↔ es_fig_dose_gradient.** `es_fig02_dcdh_tiers.png` trace la
+> **DYNAMIQUE temporelle** de deux seuils (onset core≥1 ~2014 vs escalade lourde core≥6
+> 2022) ; `es_fig_dose_gradient.png` trace le **GRADIENT transversal complet** des ATE,
+> incluant le per-dose normalisé et le palier intermédiaire core≥2 (n.s.) qu'`es_fig02`
+> n'affiche pas. Les deux sont **complémentaires** — `es_fig02` pour la temporalité,
+> le gradient pour l'échelle de dose, core≥2 étant le palier intermédiaire bruité.
+> `es_fig02` n'est pas régénérée (inchangée).
 
 ### Robustesses (Bloc C, script `11d`, `tab_dcdh_robustness.csv`)
 
@@ -179,7 +200,9 @@ lourde). Table : `Output/Tables/EventStudy/tab_dcdh_by_tier.csv` (normalisé + 3
 
 ### Inventaire des sorties (event study, après nettoyage Bloc D)
 - Figures : `es_fig01_sunab_2014.png` (Phase 1, canal/2014),
-  `es_fig02_dcdh_tiers.png` (Phase 3, onset vs escalade lourde).
+  `es_fig02_dcdh_tiers.png` (Phase 3, onset vs escalade lourde),
+  `es_fig_dose_gradient.png` (gradient transversal des ATE par palier),
+  `es_fig_russia_escalation_by_type.png` (escalade par type 2008-2023).
 - Tables : `tab_treatment_validation.csv` (+ `_meta`), `tab_static_did.csv`,
   `tab_eventstudy_sunab.csv`, `tab_dcdh_by_tier.csv`, `tab_dcdh_robustness.csv`,
   `tab_russia_cases_by_type.csv`.
