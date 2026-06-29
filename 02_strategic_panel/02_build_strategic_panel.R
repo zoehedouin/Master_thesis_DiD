@@ -142,6 +142,70 @@ cat("  - Doublons retires      :", n_before - n_after,
     "(", paste(dups, collapse = ", "), ")\n")
 
 
+# ---- Section 1b : Liste d'embargo de reference (proxy HS6, fixe, uniforme) ---
+#
+# SOURCE : annexes du reglement (UE) 833/2014 et ses paquets de sanctions
+# successifs (2022 -> 2025), categorie par categorie. Utilisee pour la PARTITION
+# a 3 buckets (decomposition §5 : effet mecanique du ban vs vraie fragmentation).
+#
+# AVERTISSEMENT (a lire) : liste de REFERENCE en PROXY. Elle est ancree au niveau
+# CHAPITRE (2 chiffres) ou POSITION (4 chiffres) HS la ou le ban est large, plutot
+# qu'au code HS6 exact (fausse precision evitee). Elle est appliquee UNIFORMEMENT
+# a TOUTES les paires (PAS sender-specifique, PAS datee) : c'est une grille de
+# lecture transversale, pas le perimetre juridique exact d'un sender a une date.
+# REVISABLE. Mecanique de matching (cf. emb_chapters/positions/exact ci-dessous) :
+# un code HS6 k est classe "embargo" si son chapitre substr(k,1,2) ∈ emb_chapters,
+# OU sa position substr(k,1,4) ∈ emb_positions, OU k exact ∈ emb_exact.
+log_step("Section 1b : liste d'embargo de reference (proxy HS6).")
+embargo_codes <- list(
+  # --- IMPORTS depuis la Russie (chapitres entiers : ban large) ---
+  energy_ch27       = "27",   # combustibles mineraux : petrole brut/raffines, gaz, charbon (paquets 5-8). DOMINE l'embargo (cf. audit).
+  steel_iron_ch72   = "72",   # fer & acier (chapitre). HS73 (articles en fer/acier) NON inclus par defaut (mesures plus ciblees) -> extension possible.
+  aluminium_ch76    = "76",   # aluminium (restrictions partielles paquet 12-2023 ; proxy chapitre).
+  fish_seafood_ch03 = "03",   # poissons & crustaces/mollusques (paquet 5).
+  wood_ch44         = "44",   # bois (cas du contreplaque de bouleau, paquet 5 ; proxy chapitre).
+  # --- IMPORTS metaux/mineraux precieux (positions) ---
+  gold_7108         = "7108", # or (paquet 7).
+  diamonds_7102     = "7102", # diamants non industriels (paquet 12 ; proxy position, le ban vise le non-industriel).
+  # cuivre/nickel : laisses HORS par defaut (extension possible : 7402/7403/7502...).
+  # --- EXPORTS vers la Russie : luxe ---
+  luxury_cars_8703  = "8703", # voitures de tourisme : luxe au-dela d'un seuil de valeur dans le reglement ; ici proxy POSITION (pas de seuil applique), documente.
+  watches_ch91      = "91",   # horlogerie (chapitre) : luxe.
+  jewellery_7113    = "7113"  # articles de bijouterie (position) : luxe.
+)
+# Dual-use / techno avancee (EXPORT vers la Russie) : on NE DUPLIQUE PAS la liste.
+# On REFERENCE les sous-listes d'Aiyar a la fois STRATEGIQUES et typiquement sous
+# embargo export (UE 833/2014 annexe VII, biens a double usage) : semiconducteurs,
+# telecoms/5G, defense. (Choix : ces 3 sous-listes ; green/pharma/critical_minerals
+# restent "strategiques non-embargo" sauf si captees par un chapitre ci-dessus.)
+embargo_dualuse_codes <- unique(c(strategic_codes$semiconductors,
+                                  strategic_codes$telecommunications_5g,
+                                  strategic_codes$defense))
+
+# Decoupage par longueur de match (prefixe chapitre / prefixe position / code exact)
+.emb_all      <- unlist(embargo_codes, use.names = FALSE)
+emb_chapters  <- .emb_all[nchar(.emb_all) == 2]   # matche substr(k,1,2)
+emb_positions <- .emb_all[nchar(.emb_all) == 4]   # matche substr(k,1,4)
+emb_exact     <- unique(c(.emb_all[nchar(.emb_all) == 6], embargo_dualuse_codes))  # matche k exact
+# Vecteur EXPOSE de codes HS6 explicites (les blocs chapitre/position sont matches
+# par prefixe, non enumeres : on n'a pas la nomenclature HS6 complete sous la main).
+all_embargo_codes <- sort(unique(emb_exact))
+
+# Classement MECE d'un code HS6 : embargo > strategique > reste.
+classify_bucket <- function(k_str) {
+  ch  <- substr(k_str, 1L, 2L)
+  pos <- substr(k_str, 1L, 4L)
+  fifelse(ch %in% emb_chapters | pos %in% emb_positions | k_str %in% emb_exact,
+          "embargo",
+          fifelse(k_str %in% all_strategic_codes, "strategic_nonembargo",
+                  "nonstrategic_nonembargo"))
+}
+cat(sprintf("  - embargo : %d chapitres (%s), %d positions (%s), %d codes exacts (dont %d dual-use Aiyar)\n",
+            length(emb_chapters), paste(emb_chapters, collapse = ","),
+            length(emb_positions), paste(emb_positions, collapse = ","),
+            length(emb_exact), length(embargo_dualuse_codes)))
+
+
 # ---- Section 2 : Crosswalk pays --------------------------------------------
 
 log_step("Section 2 : crosswalk pays (BACI numerique -> ISO3).")
@@ -314,6 +378,75 @@ cat("  - Annees couvertes                        :",
     min(energy_num$year), "-", max(energy_num$year), "\n")
 
 
+# ---- Section 3ter : partition MECE a 3 buckets (UNE passe BACI) --------------
+#
+# Classe CHAQUE code HS6 lu dans BACI en UN seul bucket (precedence
+# embargo > strategique > reste) et agrege par paire DIRIGEE-annee. Une seule
+# lecture BACI : on classe en 3 buckets, on NE relit PAS le fichier 3 fois.
+# Cache dedie _baci_buckets_cache.parquet (panel) + _baci_buckets_audit_cache.parquet
+# (audit par code) ; les caches strategique/energie existants sont conserves.
+log_step("Section 3ter : partition MECE 3 buckets (1 passe BACI, classe chaque HS6).")
+buckets_cache <- file.path(PATH_CLEAN, "_baci_buckets_cache.parquet")
+audit_cache   <- file.path(PATH_CLEAN, "_baci_buckets_audit_cache.parquet")
+
+if (file.exists(buckets_cache) && file.exists(audit_cache)) {
+  log_step(paste("  Caches buckets trouves, lecture :", buckets_cache))
+  bkt   <- as.data.table(read_parquet(buckets_cache))
+  audit <- as.data.table(read_parquet(audit_cache))
+} else {
+  baci_files3 <- list.files(PATH_BACI,
+                            pattern = "^BACI_HS92_Y[0-9]+_V202601\\.csv$",
+                            full.names = TRUE)
+  baci_files3 <- baci_files3[order(baci_files3)]
+  bkt_list <- vector("list", length(baci_files3))
+  aud_list <- vector("list", length(baci_files3))
+  for (fi in seq_along(baci_files3)) {
+    f <- baci_files3[fi]; yr <- as.integer(sub(".*_Y([0-9]{4})_.*", "\\1", basename(f)))
+    dt <- fread(f, select = c("t", "i", "j", "k", "v"),
+                colClasses = c(t = "integer", i = "integer", j = "integer",
+                               k = "integer", v = "numeric"))
+    dt[, k_str := sprintf("%06d", k)]
+    dt[, bucket := classify_bucket(k_str)]                 # 1 classification, 3 buckets
+    bkt_list[[fi]] <- dt[, .(v = sum(v, na.rm = TRUE)), by = .(t, i, j, bucket)]
+    dt[, rus_dir := fcase(i == RUS_code, "RUS_exp",        # cote export russe
+                          j == RUS_code, "RUS_imp",        # cote import russe
+                          default = "other")]
+    aud_list[[fi]] <- dt[, .(v = sum(v, na.rm = TRUE), n = .N),
+                         by = .(bucket, k_str, rus_dir)]
+    cat(sprintf("    [%d/%d] %d : %d obs HS6 classes en buckets\n",
+                fi, length(baci_files3), yr, nrow(dt)))
+    rm(dt); gc(verbose = FALSE)
+  }
+  # Panel : codes BACI -> ISO3 (gere BEL = 56 + 58), agrege par (iso3, iso3, year, bucket)
+  bkt <- rbindlist(bkt_list)
+  setnames(bkt, c("t", "i", "j"), c("year", "exp_code", "imp_code"))
+  bkt <- merge(bkt, iso3_map, by.x = "exp_code", by.y = "country_code", all.x = TRUE)
+  setnames(bkt, "iso3", "exp_iso3")
+  bkt <- merge(bkt, iso3_map, by.x = "imp_code", by.y = "country_code", all.x = TRUE)
+  setnames(bkt, "iso3", "imp_iso3")
+  bkt <- bkt[!is.na(exp_iso3) & !is.na(imp_iso3),
+             .(v = sum(v, na.rm = TRUE)), by = .(exp_iso3, imp_iso3, year, bucket)]
+  bkt <- dcast(bkt, exp_iso3 + imp_iso3 + year ~ bucket, value.var = "v", fill = 0)
+  for (b in c("embargo", "strategic_nonembargo", "nonstrategic_nonembargo"))
+    if (!b %in% names(bkt)) bkt[, (b) := 0]
+  setnames(bkt,
+           c("embargo", "strategic_nonembargo", "nonstrategic_nonembargo"),
+           c("embargo_trade_value", "strategic_nonembargo_trade_value",
+             "nonstrategic_nonembargo_trade_value"))
+  setkey(bkt, exp_iso3, imp_iso3, year)
+  # Audit : par (bucket, code HS6, direction RUS) sur TOUTES les annees
+  audit <- rbindlist(aud_list)[, .(v = sum(v, na.rm = TRUE), n_obs = sum(n)),
+                               by = .(bucket, k_str, rus_dir)]
+  write_parquet(bkt, buckets_cache)
+  write_parquet(audit, audit_cache)
+  cat("  - Cache buckets ecrit :", buckets_cache, "\n")
+  cat("  - Cache audit ecrit   :", audit_cache, "\n")
+  rm(bkt_list, aud_list); gc(verbose = FALSE)
+}
+cat("  - Paires-annees buckets :", nrow(bkt), "| annees :",
+    min(bkt$year), "-", max(bkt$year), "\n")
+
+
 # ---- Section 4 : Diagnostic codes strategiques manquants --------------------
 
 log_step("Section 4 : codes strategiques jamais observes dans BACI HS92.")
@@ -410,6 +543,58 @@ cat(sprintf("  - imp_energy_dep_rus non-NA               : %.1f%%\n",
             100 * mean(!is.na(panel$imp_energy_dep_rus))))
 
 
+# ---- Section 5b : merge partition 3 buckets + shares + assertion MECE --------
+
+log_step("Section 5b : merge buckets MECE (embargo / strategic_nonembargo / reste).")
+panel <- merge(panel, bkt, by = c("exp_iso3", "imp_iso3", "year"), all.x = TRUE)
+BUCKS <- c("embargo_trade_value", "strategic_nonembargo_trade_value",
+           "nonstrategic_nonembargo_trade_value")
+# Absence de flux dans un bucket = zero legitime (pas NA), comme l'existant.
+for (b in BUCKS) panel[is.na(get(b)), (b) := 0]
+stopifnot(nrow(panel) == n0)   # le panel garde exactement ses lignes
+
+# ASSERTION MECE : embargo + strategic_nonembargo + nonstrategic_nonembargo == trade_value
+panel[, .bsum := embargo_trade_value + strategic_nonembargo_trade_value +
+        nonstrategic_nonembargo_trade_value]
+tol <- pmax(1e-3, 1e-6 * panel$trade_value)
+n_bad <- panel[abs(.bsum - trade_value) > tol, .N]
+cat(sprintf("  - MECE : lignes |somme buckets - trade_value| > tol : %d / %d\n", n_bad, nrow(panel)))
+if (n_bad > 0) {
+  ex <- panel[abs(.bsum - trade_value) > tol][order(-abs(.bsum - trade_value))][1:min(5L, n_bad)]
+  cat("  !! Ecarts MECE (top, BACI buckets vs master trade_value) :\n")
+  print(ex[, .(exp_iso3, imp_iso3, year, trade_value, bsum = .bsum, ecart = .bsum - trade_value)])
+  # Directive de session : ne pas stopper -> RECONCILIATION. Les deux premiers
+  # buckets (embargo, strategic_nonembargo) restent issus de BACI ; le 3e bucket
+  # est ANCRE sur trade_value (residuel, meme convention pmax que non_strategic_trade)
+  # pour garantir l'identite MECE vs le total du master (consomme en aval).
+  cat("  !! Reconciliation : nonstrategic_nonembargo := pmax(trade_value - embargo - strategic_nonembargo, 0).\n")
+  panel[, nonstrategic_nonembargo_trade_value :=
+          pmax(trade_value - embargo_trade_value - strategic_nonembargo_trade_value, 0)]
+  panel[, .bsum := embargo_trade_value + strategic_nonembargo_trade_value +
+          nonstrategic_nonembargo_trade_value]
+}
+# Garde-fou dur : apres reconciliation l'identite doit tenir (sinon embargo+strat > total).
+n_hard <- panel[abs(.bsum - trade_value) > pmax(1e-2, 1e-5 * trade_value), .N]
+if (n_hard > 0) {
+  print(panel[abs(.bsum - trade_value) > pmax(1e-2, 1e-5*trade_value)][1:5,
+        .(exp_iso3, imp_iso3, year, trade_value, bsum = .bsum)])
+  stop(sprintf("Assertion MECE violee sur %d lignes : embargo+strategic_nonembargo depasse trade_value.", n_hard))
+}
+panel[, .bsum := NULL]
+
+# Shares (NA si trade_value == 0/NA : meme convention que strategic_trade_share)
+for (b in BUCKS) {
+  sh <- sub("_trade_value$", "_share", b)
+  panel[, (sh) := get(b) / trade_value]
+  panel[!is.finite(get(sh)), (sh) := NA_real_]
+  panel[trade_value == 0, (sh) := NA_real_]
+}
+cat(sprintf("  - Parts moyennes (trade>0) : embargo %.4f | strategic_nonembargo %.4f | reste %.4f\n",
+            panel[trade_value > 0, mean(embargo_share, na.rm = TRUE)],
+            panel[trade_value > 0, mean(strategic_nonembargo_share, na.rm = TRUE)],
+            panel[trade_value > 0, mean(nonstrategic_nonembargo_share, na.rm = TRUE)]))
+
+
 # ---- Section 6 : Diagnostics finaux -----------------------------------------
 
 log_step("Section 6 : diagnostics finaux.")
@@ -449,6 +634,68 @@ print(top_pairs[, .(exp_iso3, imp_iso3,
                     share = sprintf("%.1f%%", 100 * share_cum))])
 
 
+# ---- Section 6b : audit de composition des buckets --------------------------
+#
+# Calcule sur l'agregat d'audit BACI (bucket, code HS6, direction RUS). Tables
+# ecrites dans PATH_CLEAN (a cote du panel/README). Objectif : verifier que le
+# bucket embargo est SURTOUT de l'energie, mesurer le chevauchement embargo ∩
+# strategique, et rendre lisible "ce qu'il y a dans chaque bucket".
+log_step("Section 6b : audit de composition (codes, valeur, energie, chevauchement, direction).")
+au <- copy(audit)
+au[, ch := substr(k_str, 1L, 2L)]
+au[, russie := rus_dir != "other"]
+tot_all <- au[, sum(v)]; tot_rus <- au[russie == TRUE, sum(v)]
+
+# (1) Composition par bucket : nb codes HS6, valeur (totale & Russie-centree), parts
+comp <- au[, .(n_codes      = uniqueN(k_str[v > 0]),
+               value_total  = sum(v),
+               value_russia = sum(v[russie == TRUE])), by = bucket]
+comp[, `:=`(share_total  = value_total  / tot_all,
+            share_russia = value_russia / tot_rus)]
+setorder(comp, -value_total)
+fwrite(comp, file.path(PATH_CLEAN, "tab_bucket_composition.csv"))
+
+# (2) Part de HS27 (energie) dans le bucket embargo
+emb_v       <- au[bucket == "embargo", sum(v)]
+emb27_v     <- au[bucket == "embargo" & ch == "27", sum(v)]
+emb_rus_v   <- au[bucket == "embargo" & russie, sum(v)]
+emb27_rus_v <- au[bucket == "embargo" & russie & ch == "27", sum(v)]
+
+# (3) Chevauchement embargo ∩ strategique (codes Aiyar absorbes dans embargo)
+emb_codes <- unique(au[bucket == "embargo" & v > 0, k_str])
+ovl_codes <- intersect(emb_codes, all_strategic_codes)
+ovl_v     <- au[bucket == "embargo" & k_str %in% ovl_codes, sum(v)]
+
+# (4) Top 5 chapitres HS2 par valeur dans chaque bucket (commerce Russie-centre)
+top_hs2 <- au[russie == TRUE, .(value = sum(v)), by = .(bucket, ch)][order(bucket, -value)]
+top_hs2 <- top_hs2[, head(.SD, 5L), by = bucket]
+fwrite(top_hs2, file.path(PATH_CLEAN, "tab_bucket_top_hs2_russia.csv"))
+
+# (5) Composition par direction (RUS exportateur = import du monde ; RUS importateur = export du monde)
+comp_dir <- au[rus_dir != "other",
+               .(n_codes = uniqueN(k_str[v > 0]), value = sum(v)),
+               by = .(rus_dir, bucket)][order(rus_dir, -value)]
+fwrite(comp_dir, file.path(PATH_CLEAN, "tab_bucket_by_direction_russia.csv"))
+
+cat("\n========================================================\n")
+cat("AUDIT COMPOSITION DES BUCKETS\n")
+cat("========================================================\n")
+print(comp[, .(bucket, n_codes,
+               value_total_bnUSD  = round(value_total  / 1e6, 1), share_total  = sprintf("%.1f%%", 100 * share_total),
+               value_russia_bnUSD = round(value_russia / 1e6, 1), share_russia = sprintf("%.1f%%", 100 * share_russia))])
+cat(sprintf("\nHS27 (energie) dans le bucket embargo : %.1f%% du total | %.1f%% en Russie-centre -> 'embargo ~ surtout energie'\n",
+            100 * emb27_v / emb_v, 100 * emb27_rus_v / max(emb_rus_v, 1)))
+cat(sprintf("Chevauchement embargo ∩ strategique  : %d codes Aiyar absorbes dans embargo, %.1f Md USD (%.1f%% du bucket embargo)\n",
+            length(ovl_codes), ovl_v / 1e6, 100 * ovl_v / emb_v))
+cat("  (-> explique un bucket strategic_nonembargo amaigri : ces codes quittent le bucket 2 pour le 1)\n")
+cat("\nTop chapitres HS2 par bucket (Russie-centre) :\n"); print(top_hs2)
+cat("\nComposition par direction (Russie-centre) :\n"); print(comp_dir)
+# Valeurs reutilisees dans le README
+audit_emb27_pct     <- 100 * emb27_v / emb_v
+audit_emb27_rus_pct <- 100 * emb27_rus_v / max(emb_rus_v, 1)
+audit_ovl_n <- length(ovl_codes); audit_ovl_pct <- 100 * ovl_v / emb_v
+
+
 # ---- Section 7 : Sauvegarde -------------------------------------------------
 
 log_step("Section 7 : sauvegarde.")
@@ -456,6 +703,10 @@ log_step("Section 7 : sauvegarde.")
 setcolorder(panel, c("exp_iso3", "imp_iso3", "year",
                      "trade_value", "strategic_trade_value", "strategic_trade_share",
                      "non_strategic_trade", "non_strategic_share",
+                     # partition MECE a 3 buckets (decomposition §5)
+                     "embargo_trade_value", "embargo_share",
+                     "strategic_nonembargo_trade_value", "strategic_nonembargo_share",
+                     "nonstrategic_nonembargo_trade_value", "nonstrategic_nonembargo_share",
                      "exp_energy_dep_rus", "imp_energy_dep_rus"))
 setkey(panel, exp_iso3, imp_iso3, year)
 
@@ -473,9 +724,11 @@ readme_txt <- c(
   paste("Build date :", format(Sys.time(), "%Y-%m-%d %H:%M:%S")),
   "",
   "## Construction",
-  "Enrichissement de master_panel.parquet (cf. README.md) avec deux variables",
-  "agregees sur le commerce strategique (classification Aiyar et al. 2024, IMF",
-  "'Geoeconomic Fragmentation', 6 secteurs).",
+  "Enrichissement de master_panel.parquet (cf. README.md) avec : (i) les variables",
+  "de commerce strategique (classification Aiyar et al. 2024, IMF 'Geoeconomic",
+  "Fragmentation', 6 secteurs), (ii) la dependance energetique russe, et (iii) une",
+  "partition MECE a 3 buckets (embargo / strategique-non-embargo / reste) pour la",
+  "decomposition §5.",
   "",
   "## Variables ajoutees",
   "- strategic_trade_value : somme du commerce BACI sur les codes HS6",
@@ -493,6 +746,36 @@ readme_txt <- c(
   "  (cache _baci_energy_cache.parquet) ; denominateur = imports du master panel.",
   "  Variante 'part du commerce total' (imports+exports) mentionnee dans le code,",
   "  non activee par defaut.",
+  "",
+  "## Partition MECE a 3 buckets (decomposition §5)",
+  "Decoupage MUTUELLEMENT EXCLUSIF et EXHAUSTIF du commerce bilateral dirige, par",
+  "precedence au niveau HS6 : embargo > strategique > reste. Les 3 sommes egalent",
+  "trade_value (assertion verifiee au build). Sert au test mecanique (le commerce",
+  "banni chute) vs vraie fragmentation (le commerce AUTORISE recule aussi).",
+  "- embargo_trade_value / embargo_share : commerce sur les codes HS6 sous embargo",
+  "  de reference (cf. liste ci-dessous).",
+  "- strategic_nonembargo_trade_value / _share : commerce sur les codes strategiques",
+  "  (Aiyar) qui ne sont PAS dans la liste d'embargo.",
+  "- nonstrategic_nonembargo_trade_value / _share : tout le reste (ni embargo, ni",
+  "  strategique). Shares = bucket / trade_value, NA si trade_value == 0.",
+  "",
+  "### Liste d'embargo de reference (PROXY)",
+  "Source : annexes du reglement (UE) 833/2014 et paquets de sanctions 2022-2025.",
+  "AVERTISSEMENT : liste de REFERENCE en PROXY, ancree au niveau CHAPITRE/POSITION",
+  "HS la ou le ban est large (matching par prefixe), appliquee UNIFORMEMENT a toutes",
+  "les paires (PAS sender-specifique ni datee), REVISABLE. Blocs :",
+  "- Imports (chapitres) : 27 energie, 72 fer/acier, 76 aluminium, 03 poissons,",
+  "  44 bois. Positions : 7108 or, 7102 diamants. (cuivre/nickel hors par defaut.)",
+  "- Exports luxe : 8703 voitures (proxy position, sans seuil de valeur), 91",
+  "  horlogerie, 7113 bijouterie.",
+  "- Exports dual-use : sous-listes Aiyar semiconducteurs + telecoms/5G + defense",
+  "  (UE 833/2014 annexe VII), referencees sans duplication.",
+  paste0("Audit (Russie-centre) : HS27 (energie) = ", sprintf("%.0f%%", audit_emb27_rus_pct),
+         " du bucket embargo (=> 'embargo ~ surtout energie') ; chevauchement embargo ∩",
+         " strategique = ", audit_ovl_n, " codes Aiyar absorbes (",
+         sprintf("%.0f%%", audit_ovl_pct), " du bucket embargo)."),
+  "Tables d'audit : tab_bucket_composition.csv, tab_bucket_top_hs2_russia.csv,",
+  "tab_bucket_by_direction_russia.csv (dans Data/Clean).",
   "",
   "## Codes HS6 strategiques",
   paste0("- Total uniques : ", n_after, " codes apres dedoublonnage"),
@@ -524,7 +807,11 @@ readme_txt <- c(
   "Ilyina, A., Kangur, A., Kunaratskul, T., Rodriguez, S., Ruta, M.,",
   "Schulze, T., Soderberg, G., Trevino, J.P. (2024).",
   "Geoeconomic Fragmentation and the Future of Multilateralism.",
-  "IMF Staff Discussion Note SDN/2023/001."
+  "IMF Staff Discussion Note SDN/2023/001.",
+  "",
+  "Reglement (UE) 833/2014 du Conseil concernant des mesures restrictives eu egard",
+  "aux actions de la Russie deconstabilisant la situation en Ukraine, et ses paquets",
+  "de sanctions successifs (2022-2025). Liste d'embargo de reference (proxy HS6)."
 )
 writeLines(readme_txt, out_readme)
 
