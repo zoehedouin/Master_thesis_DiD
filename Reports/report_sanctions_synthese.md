@@ -191,7 +191,9 @@ hétérogène DistLagHet + naïf TWFE + IHS).
 
 **Figures** (legacy, archivées) : `_archive/output_legacy/08_ppml/figures/es_fig01_sunab_2014.png` ;
 (actif) `08_ols/figures/` : `es_fig02_dcdh_tiers.png`, `es_fig_sunab_ppml_vs_ols.png`
-(A/A′/B), `es_fig_distlag.png`.
+(A/A′/B), `es_fig_distlag.png`, `es_fig_dose_gradient.png` (gradient ATE par palier :
+per-dose −0.08, onset −0.18, core≥2 −0.07 n.s., core≥6 −0.43), `es_fig_russia_escalation_by_type.png`
+(escalade ×4-5 en 2022, tous types ; embargo complet ≤1).
 
 **Tables** — legacy `_archive/output_legacy/08_ppml/tables/` : `tab_treatment_validation.csv`
 (+ `_meta`), `tab_static_did.csv`, `tab_eventstudy_sunab.csv` ; actif `08_ols/tables/` :
