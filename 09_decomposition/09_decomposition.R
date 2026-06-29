@@ -297,6 +297,144 @@ if (nrow(t3_dt)) {
 } else cat("  !! TIER 3 : aucun modele estimable.\n")
 
 
+# ---- Section 4bis : HonestDiD par bucket x direction (robustesse pre-tendances)
+
+log_step("Section 4bis : HonestDiD (Rambachan & Roth 2023) par bucket x direction.")
+# Cible : le PHARE nonstrat_ne|RUS_imp (cellule a drapeau DRIFT du gate Tier 1).
+# Config VERBATIM 07 : fixest sunab n'expose pas la vcov agregee -> on rejoue la
+# representation event-study TWFE i(rel_bin, ref=-1) (coef/vcov concordants ; cohorte
+# 2014 dominante => ~ Sun-Abraham), cible = ATT (moyenne post k>=+1), grille fine.
+hd_ok <- requireNamespace("HonestDiD", quietly = TRUE)
+if (!hd_ok) cat("  !! package HonestDiD indisponible -> Section 4bis sautee.\n") else {
+  GRID <- seq(0, 1.2, by = 0.05)                                  # grille M-bar (verbatim 07)
+  hd_break <- function(dt) {                                      # M-bar de rupture interpole (verbatim 07)
+    setorder(dt, Mbar)
+    excl <- (dt$lb > 0 & dt$ub > 0) | (dt$lb < 0 & dt$ub < 0)
+    if (!any(excl)) return(0)
+    li <- max(which(excl)); if (li == nrow(dt)) return(dt$Mbar[li])
+    bnd <- if (dt$ub[li] < 0) "ub" else "lb"
+    y1 <- dt[[bnd]][li]; y2 <- dt[[bnd]][li + 1]
+    dt$Mbar[li] + (0 - y1) * (dt$Mbar[li + 1] - dt$Mbar[li]) / (y2 - y1)
+  }
+  hd_cell <- function(ycol, lab_b, lab_d) {
+    d <- df[direction == lab_d]; d <- d[!(ever & onset_year < YR_MIN + 1L)]
+    if (d[ever == TRUE, uniqueN(onset_year)] < 1L) return(NULL)
+    d[, rel_bin := ifelse(ever, pmax(-5L, pmin(5L, year - onset_year)), -1L)]  # never-treated -> ref
+    m <- tryCatch(fepois(as.formula(sprintf("%s ~ i(rel_bin, ref = -1) + rta | pkey + year", ycol)),
+                  data = d, cluster = ~ pkey), error = function(e) NULL)
+    if (is.null(m)) { cat("   HD skip (fepois)", lab_b, lab_d, "\n"); return(NULL) }
+    b_all <- coef(m); V_all <- vcov(m)
+    ev <- grep("rel_bin::", names(b_all), value = TRUE)
+    rt_h <- as.integer(sub(".*rel_bin::(-?[0-9]+).*", "\\1", ev)); ord <- order(rt_h); ev <- ev[ord]; rt_h <- rt_h[ord]
+    betahat <- b_all[ev]; V <- V_all[ev, ev, drop = FALSE]
+    numPre <- sum(rt_h < 0); numPost <- sum(rt_h >= 0)
+    if (numPre < 1L || numPost < 1L) return(NULL)
+    postk <- rt_h[rt_h >= 0]; l_vec <- as.numeric(postk >= 1)
+    l_vec <- if (sum(l_vec) > 0) l_vec / sum(l_vec) else rep(1 / numPost, numPost)
+    rm_res <- tryCatch(HonestDiD::createSensitivityResults_relativeMagnitudes(
+                betahat = betahat, sigma = V, numPrePeriods = numPre, numPostPeriods = numPost,
+                l_vec = l_vec, Mbarvec = GRID),
+              error = function(e) { cat("   HD skip (RM)", lab_b, lab_d, ":", conditionMessage(e), "\n"); NULL })
+    if (is.null(rm_res)) return(NULL)
+    sd_res <- tryCatch(HonestDiD::createSensitivityResults(
+                betahat = betahat, sigma = V, numPrePeriods = numPre, numPostPeriods = numPost,
+                l_vec = l_vec, Mvec = seq(0, 0.3, by = 0.1)), error = function(e) NULL)
+    rm_dt <- as.data.table(rm_res); brk <- hd_break(rm_dt)
+    pidx <- which(rt_h >= 0); att <- sum(l_vec * betahat[pidx])
+    ase <- sqrt(as.numeric(t(l_vec) %*% V[pidx, pidx, drop = FALSE] %*% l_vec))
+    list(rm = rm_dt[, .(Mbar, lb, ub, bucket = lab_b, direction = lab_d)],
+         sd = if (!is.null(sd_res)) as.data.table(sd_res)[, `:=`(bucket = lab_b, direction = lab_d)] else NULL,
+         summ = data.table(bucket = lab_b, direction = lab_d, att = att,
+                           ci_lo = att - 1.96 * ase, ci_hi = att + 1.96 * ase, breakdown_Mbar = brk,
+                           status = fifelse(brk >= 1, "survit jusqu'a M-bar>=1 (robuste)",
+                                     fifelse(brk > 0, sprintf("survit jusqu'a M-bar=%.2f", brk), "fragile des M-bar=0"))))
+  }
+  # Cellules : PHARE d'abord, puis ancres embargo (saines), puis totaux (DRIFT). strategic_ne EXCLU.
+  HD_CELLS <- list(
+    list("nonstrat_ne",  "RUS_importateur"),   # PHARE
+    list("nonstrat_ne",  "RUS_exportateur"),
+    list("embargo",      "RUS_exportateur"),   # ancre (pre-tendance propre)
+    list("embargo",      "RUS_importateur"),   # ancre
+    list("total",        "RUS_exportateur"),
+    list("total",        "RUS_importateur"))
+  hd_rm <- list(); hd_sd <- list(); hd_summ <- list()
+  for (c_ in HD_CELLS) {
+    r <- hd_cell(BUCKETS[[c_[[1]]]], c_[[1]], c_[[2]])
+    if (is.null(r)) next
+    key <- paste(c_[[2]], c_[[1]])
+    hd_rm[[key]] <- r$rm; hd_sd[[key]] <- r$sd; hd_summ[[key]] <- r$summ
+  }
+  hd_summ_dt <- rbindlist(hd_summ, use.names = TRUE)
+  hd_rm_dt   <- rbindlist(hd_rm, use.names = TRUE)
+  if (nrow(hd_summ_dt)) {
+    hd_summ_dt[, cell := paste(bucket, direction, sep = " | ")]
+    setorder(hd_summ_dt, -breakdown_Mbar)
+    wtab(hd_summ_dt, "tab_t1_honestdid")
+    cat("\n  --- HonestDiD : breakdown M-bar par cellule (phare en tete) ---\n")
+    phare <- hd_summ_dt[bucket == "nonstrat_ne" & direction == "RUS_importateur"]
+    print(rbind(phare, hd_summ_dt[!(bucket == "nonstrat_ne" & direction == "RUS_importateur")])[,
+          .(cell, att = round(att, 3), breakdown_Mbar = round(breakdown_Mbar, 3), status)])
+
+    # Figure : courbes de sensibilite (IC robuste vs M-bar), facettees par cellule.
+    brk_lines <- hd_summ_dt[, .(bucket, direction, breakdown_Mbar)]
+    hd_rm_dt <- merge(hd_rm_dt, brk_lines, by = c("bucket", "direction"), all.x = TRUE)
+    hd_rm_dt[, cell := paste(bucket, direction, sep = " | ")]
+    hd_rm_dt[, phare := bucket == "nonstrat_ne" & direction == "RUS_importateur"]
+    ph <- ggplot(hd_rm_dt, aes(Mbar)) +
+      geom_hline(yintercept = 0, lty = 2, color = "grey50") +
+      geom_vline(aes(xintercept = breakdown_Mbar), lty = 3, color = "#B2182B") +
+      geom_ribbon(aes(ymin = lb, ymax = ub, fill = phare), alpha = 0.25) +
+      geom_line(aes(y = lb)) + geom_line(aes(y = ub)) +
+      facet_wrap(~ cell, scales = "free_y") +
+      scale_fill_manual(values = c(`TRUE` = "#B2182B", `FALSE` = "#2166AC"), guide = "none") +
+      labs(title = "HonestDiD par bucket x direction — sensibilite aux pre-tendances",
+           subtitle = "IC robuste de l'ATT (post k>=+1) vs M-bar (relative magnitudes). Trait rouge = breakdown M-bar. Phare (nonstrat_ne|RUS_imp) en rouge.",
+           x = "M-bar (violation relative des pre-tendances)", y = "IC robuste de l'ATT",
+           caption = "Rambachan & Roth (2023), config 07 verbatim. TWFE event study i(rel_bin) (~ Sun-Abraham, cohorte 2014 dominante).") +
+      theme_minimal(base_size = 11) +
+      theme(plot.title = element_text(face = "bold"), strip.text = element_text(face = "bold", size = 8),
+            plot.background = element_rect(fill = "white", color = NA),
+            panel.background = element_rect(fill = "white", color = NA))
+    ggsave(file.path(PATH_FIG, "fig_t1_honestdid_sensitivity.png"), ph, width = 11, height = 6.5, dpi = 300)
+    cat("  - ecrit fig_t1_honestdid_sensitivity.png\n")
+  } else cat("  !! HonestDiD : aucune cellule estimable.\n")
+
+  # --- Controles compagnons : endpoint (lead -5 binne) + pente pre ------------
+  # (1) Re-estimation sunab SANS l'endpoint binne -5 : l'ATT post bouge-t-il ?
+  att_es <- function(ycol, lab_d, no_endpoint = FALSE) {
+    d <- df[direction == lab_d]; d <- d[!(ever & onset_year < YR_MIN + 1L)]
+    if (no_endpoint) d <- d[!(ever & (year - onset_year) <= -5L)]   # retire le pre-lointain (bin -5)
+    d[, coh := fifelse(ever, onset_year, 10000L)]
+    if (d[ever == TRUE, uniqueN(coh)] < 1L) return(NA_real_)
+    rg <- range(d[ever == TRUE, year - onset_year])
+    blo <- max(if (no_endpoint) -4L else -5L, rg[1]); bhi <- min(5L, rg[2])
+    fml <- as.formula(sprintf("%s ~ sunab(coh, year, bin.rel = list('%d' = %d:%d, '%d' = %d:%d)) + rta | pkey + year",
+                              ycol, blo, rg[1], blo, bhi, bhi, rg[2]))
+    m <- tryCatch(fepois(fml, data = d, cluster = ~ pkey), error = function(e) NULL)
+    if (is.null(m)) return(NA_real_)
+    a <- as.data.table(summary(m, agg = "att")$coeftable, keep.rownames = "term")
+    a[term == "ATT", Estimate]
+  }
+  EP_CELLS <- list(list("nonstrat_ne","RUS_importateur"), list("nonstrat_ne","RUS_exportateur"),
+                   list("embargo","RUS_exportateur"), list("embargo","RUS_importateur"))
+  ep <- rbindlist(lapply(EP_CELLS, function(c_) {
+    b <- c_[[1]]; d_ <- c_[[2]]; yc <- BUCKETS[[b]]
+    a_with <- att_es(yc, d_, FALSE); a_wo <- att_es(yc, d_, TRUE)
+    # (2) pente pre : moyenne des leads proches (rel -4..-2, hors endpoint et hors ref -1)
+    lds <- t1_es_dt[bucket == b & direction == d_ & rel_time %in% c(-4L,-3L,-2L), estimate]
+    data.table(bucket = b, direction = d_, att_with_endpoint = a_with, att_no_endpoint = a_wo,
+               delta = a_wo - a_with, mean_near_lead = if (length(lds)) mean(lds) else NA_real_,
+               ratio_lead_to_att = if (length(lds) && is.finite(a_with) && a_with != 0)
+                 abs(mean(lds)) / abs(a_with) else NA_real_)
+  }), use.names = TRUE)
+  wtab(ep, "tab_t1_endpoint_robustness")
+  cat("\n  --- Controle endpoint (ATT avec vs sans le lead -5 binne) + pente pre ---\n")
+  print(ep[, .(bucket, direction, att_with = round(att_with_endpoint, 3),
+               att_sans = round(att_no_endpoint, 3), delta = round(delta, 3),
+               mean_lead = round(mean_near_lead, 3), ratio = round(ratio_lead_to_att, 2))])
+}
+
+
 # ---- Section 5 : recapitulatif -----------------------------------------------
 log_step("Section 5 : recapitulatif.")
 cat("\n== Tables ==\n"); print(list.files(PATH_TAB, pattern = "^tab_t"))
