@@ -426,6 +426,22 @@ l'une ni l'autre.
 - **`non_strategic_share`** : `non_strategic_trade / trade_value`, NA si total 0
   (même convention que `strategic_trade_share`).
 
+### Partition MECE à 3 buckets (script 02, décomposition §5)
+- **`embargo_trade_value` / `embargo_share`** : commerce sur les codes HS6 sous
+  **embargo de référence** (proxy règlement UE 833/2014 : énergie HS27, fer/acier
+  72, aluminium 76, poissons 03, bois 44, or 7108, diamants 7102 ; luxe export
+  8703/91/7113 ; dual-use Aiyar semi/télécom/défense). Liste **fixe, uniforme à
+  toutes les paires, niveau chapitre/position, révisable** (proxy, pas le périmètre
+  juridique exact). Dominé par l'énergie (cf. audit `tab_bucket_composition.csv`).
+- **`strategic_nonembargo_trade_value` / `_share`** : codes **stratégiques (Aiyar)
+  PAS dans l'embargo**. Peut être maigre (les dual-use sont absorbés par l'embargo).
+- **`nonstrategic_nonembargo_trade_value` / `_share`** : **tout le reste**.
+- **Règle MECE** : précédence au niveau HS6 **embargo > stratégique > reste** ;
+  chaque code dans exactement un bucket ⇒ les 3 sommes = `trade_value` (assertion
+  au build). **Usage** : test **mécanique** (le commerce banni chute) vs **vraie
+  fragmentation** (le commerce *autorisé* — buckets 2/3 — recule aussi : de-risking,
+  sur-conformité). Shares = bucket / `trade_value`, NA si `trade_value == 0`.
+
 ### `exp_energy_dep_rus` / `imp_energy_dep_rus` (script 02)
 - **Mesure** : dépendance énergétique russe (monadique, mergée des deux côtés).
   Part des hydrocarbures russes (BACI **HS chapitre 27**, exportateur = RUS) dans

@@ -34,7 +34,7 @@ sous `Rscript` comme en `source()` interactif.
 |---|---|---|---|---|
 | 00 | `00_setup.R` (racine) | **NEW** | — (socle) | (aucune ; sourcé partout) |
 | 01 | `01_master_panel/01_build_master_panel.R` | gardé | préalable (données) | `Data/Clean/master_panel.*` |
-| 02 | `02_strategic_panel/02_build_strategic_panel.R` | gardé | préalable (données) | `Data/Clean/master_panel_with_strategic.*` |
+| 02 | `02_strategic_panel/02_build_strategic_panel.R` | gardé (+ partition MECE 3 buckets) | préalable (données) | `Data/Clean/master_panel_with_strategic.*` ; partition embargo/stratégique/reste pour §5 + audit (`tab_bucket_*.csv`) |
 | 03 | `03_sanctions/03_build_sanctions.R` | **scindé** (sanctions pur) | préalable (traitement) | `Data/Clean/sanctions_panel.parquet` |
 | — | `_archive/iv_legacy/build_iv_panel.R` | **archivé** (hors pipeline) | legacy IV | `Data/Clean/_archive/iv_panel.parquet` |
 | 04 | `04_un_votes/04_build_un_votes.R` | **NEW (squelette)** | préliminaire (votes ONU) | `Data/Clean/un_votes.*` |
