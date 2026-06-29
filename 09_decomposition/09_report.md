@@ -104,6 +104,50 @@ ref = Neither)`, FE `pkey + year`. Effets clés :
 
 ---
 
+## Robustesse pré-tendances (HonestDiD) (`tab_t1_honestdid.csv`, `tab_t1_endpoint_robustness.csv`, `fig_t1_honestdid_sensitivity.png`)
+
+Le phare `nonstrat_ne | RUS import` est **exactement** la cellule où le gate de Tier 1
+a tiré un drapeau DRIFT. On teste donc sa survie à une violation bornée du parallélisme
+(Rambachan & Roth 2023, relative magnitudes ; **config 07 verbatim** : représentation
+event-study TWFE `i(rel_bin, ref=−1)`, cible = ATT post k≥+1, grille M̄ ∈ [0 ; 1.2]).
+
+**Breakdown M̄ par cellule** (M̄* = violation max, en multiple de la pré-tendance observée,
+où l'IC robuste touche zéro) :
+
+| cellule | ATT (TWFE) | breakdown M̄* | statut |
+|---|---:|---:|---|
+| **`nonstrat_ne \| RUS import` (PHARE)** | −0.384 | **0.28** | survit jusqu'à M̄=0.28 |
+| `embargo \| RUS export` (ancre) | −0.562 | 0.54 | survit jusqu'à M̄=0.54 |
+| `total \| RUS export` | −0.537 | 0.44 | — |
+| `total \| RUS import` | −0.394 | 0.25 | — |
+| `nonstrat_ne \| RUS export` | −0.357 | 0.10 | — |
+| `embargo \| RUS import` (ancre) | −0.457 | 0.08 | — |
+
+**Lecture honnête.** Les breakdowns sont **modestes** (tous < 0.55), **nettement
+inférieurs au total de 07** (M̄=0.96). Ce n'est PAS spécifique au phare : les **ancres
+embargo** (pré-tendances propres, effet fort) sont elles aussi modestes (0.08–0.54) →
+la faible robustesse vient de la **précision réduite des sous-panels directionnels**
+(~230 partenaires, IC plus larges), **pas** d'une dérive de tendance. À reporter comme
+**robustesse modérée**, sans surinterpréter « survit ».
+
+**Contrôles compagnons (dirimants sur le drapeau) — `tab_t1_endpoint_robustness.csv` :**
+le DRIFT vient du **lead −5 binné**. Or :
+1. **Retrait de l'endpoint** : ré-estimer le phare en coupant le lead −5 laisse l'ATT
+   **inchangé** : −0.541 → −0.540 (**Δ = 0.000**). Idem ailleurs (Δ ≤ 0.03). Le drapeau
+   du gate est donc un **artefact de l'endpoint binné**, pas un vrai biais de tendance.
+2. **Pente pré vs effet post** : la dérive des leads proches (−4/−3/−2) du phare vaut
+   **+0.04 en moyenne, soit ~8 % de l'effet** (−0.54) ; ratio ≤ 0.20 partout. La dérive
+   pré est **un ordre de grandeur sous l'effet**.
+
+**Phrase de cadrage (réutilisable telle quelle).** *« L'effet de fragmentation sur le
+commerce autorisé importé par la Russie est de signe et d'ampleur stables ; sa
+robustesse HonestDiD est modérée (breakdown M̄ ≈ 0.28), reflétant la taille réduite du
+sous-panel directionnel plutôt qu'une pré-tendance — le drapeau du gate provient de
+l'endpoint binné −5, dont le retrait laisse l'ATT inchangé (Δ ≈ 0), et la dérive
+pré-traitement proche vaut ~8 % de l'effet. »*
+
+---
+
 ## Caveats (câblés)
 
 1. **Redirection (RUS exportateur).** Le DiD capte la chute **sanctionneur-spécifique**

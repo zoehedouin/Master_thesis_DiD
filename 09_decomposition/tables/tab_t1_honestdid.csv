@@ -1,0 +1,7 @@
+bucket,direction,att,ci_lo,ci_hi,breakdown_Mbar,status,cell
+embargo,RUS_exportateur,-0.562481342323245,-0.778362042890515,-0.346600641755974,0.5425,survit jusqu'a M-bar=0.54,embargo | RUS_exportateur
+total,RUS_exportateur,-0.536573957607384,-0.713087617062256,-0.360060298152512,0.4375,survit jusqu'a M-bar=0.44,total | RUS_exportateur
+nonstrat_ne,RUS_importateur,-0.384200438827215,-0.521984119443679,-0.24641675821075,0.28375,survit jusqu'a M-bar=0.28,nonstrat_ne | RUS_importateur
+total,RUS_importateur,-0.394421504580429,-0.547890671697648,-0.24095233746321,0.24625,survit jusqu'a M-bar=0.25,total | RUS_importateur
+nonstrat_ne,RUS_exportateur,-0.356516530268899,-0.588509393991819,-0.124523666545978,0.1046875,survit jusqu'a M-bar=0.10,nonstrat_ne | RUS_exportateur
+embargo,RUS_importateur,-0.456921726433925,-0.801594334793742,-0.112249118074107,0.0840909090909092,survit jusqu'a M-bar=0.08,embargo | RUS_importateur
