@@ -794,3 +794,85 @@ if (nrow(boot_tab)) {
   if (max(boot_tab$fail_rate) > 0.10) cat("  !! AVERTISSEMENT : fail_rate > 10% sur un coef (cf. md).\n")
 } else cat("  !! Aucun resultat bootstrap (toutes les specs ont echoue).\n")
 log_step("Section 9 (bootstrap pigeonhole) terminee.")
+
+
+# =============================================================================
+# Section 10 : FOREST PLOT — inference clusterisee-paire vs bootstrap dyadique.
+# ADDITIF STRICT (apres la Section 9). Lit boot_tab en memoire, sinon le CSV.
+# Aucune reestimation : visualise tab_ppml_dyadic_bootstrap.
+# =============================================================================
+log_step("Section 10 : forest plot (inference paire vs bootstrap dyadique).")
+# Locale UTF-8 pour le rendu des accents (le device echoue sous locale C).
+suppressWarnings(Sys.setlocale("LC_CTYPE", "en_US.UTF-8"))
+if (!exists("boot_tab"))
+  boot_tab <- fread(file.path(PATH_TAB, "tab_ppml_dyadic_bootstrap.csv"))
+
+LAB_FOREST <- c(
+  treated_post                         = "DiD statique (effet moyen)",
+  rus_nt                               = "Type : non-commercial",
+  rus_tr                               = "Type : commercial",
+  "cell_2022::a_both:post2022"         = "2×2 : condamné + sanctionné",
+  "cell_2022::b_condemn_only:post2022" = "2×2 : condamné seul")
+ORD_F     <- names(LAB_FOREST)
+MODEL_LAB <- c(static_treated_post = "Statique", type_contrast_dir = "Type",
+               did_2x2_cell_x_post2022 = "2×2")
+
+bt_f <- as.data.table(boot_tab)
+miss <- setdiff(ORD_F, bt_f$term)
+if (length(miss)) cat("  !! coefs absents de la table :", paste(miss, collapse = ", "), "\n")
+cat(sprintf("  - coefs presents : %d/5\n", length(intersect(ORD_F, bt_f$term))))
+bt_f <- bt_f[term %in% ORD_F]
+qz <- qnorm(0.975)
+fr <- rbind(
+  bt_f[, .(term, model, estimate, lo = estimate - qz * se_pair, hi = estimate + qz * se_pair,
+           p = p_pair, method = "Cluster paire")],
+  bt_f[, .(term, model, estimate, lo = ci_lo, hi = ci_hi, p = p_boot, method = "Bootstrap dyadique")])
+fr[, lab    := factor(LAB_FOREST[term], levels = rev(LAB_FOREST[ORD_F]))]   # treated_post en haut
+fr[, mblk   := factor(MODEL_LAB[model], levels = c("Statique", "Type", "2×2"))]
+fr[, method := factor(method, levels = c("Cluster paire", "Bootstrap dyadique"))]
+
+# Labels de convergence (1 - fail_rate), une fois par coef, a droite.
+xr   <- range(fr[is.finite(lo), lo], fr[is.finite(hi), hi])
+xpad <- xr[2] + 0.10 * diff(xr)
+conv <- bt_f[, .(term, model, conv = sprintf("conv. %.0f%%", 100 * (1 - fail_rate)))]
+conv[, `:=`(lab = factor(LAB_FOREST[term], levels = rev(LAB_FOREST[ORD_F])),
+            mblk = factor(MODEL_LAB[model], levels = c("Statique", "Type", "2×2")), x = xpad)]
+
+# Annotation du basculement de significativite (2x2 : condamne seul).
+bk <- "cell_2022::b_condemn_only:post2022"
+ann <- if (bk %in% bt_f$term) data.table(
+  lab  = factor(LAB_FOREST[bk], levels = rev(LAB_FOREST[ORD_F])),
+  mblk = factor("2×2", levels = c("Statique", "Type", "2×2")),
+  x = bt_f[term == bk, estimate], txt = "perd la significativité à 5 %") else NULL
+
+pal <- c("Cluster paire" = "#4393C3", "Bootstrap dyadique" = "#D6604D")
+pd  <- position_dodge(width = 0.55)
+p_for <- ggplot(fr, aes(estimate, lab, color = method)) +
+  geom_vline(xintercept = 0, linetype = 2, color = "grey50") +
+  geom_errorbarh(aes(xmin = lo, xmax = hi), position = pd, height = 0.25, linewidth = 0.7) +
+  geom_point(position = pd, size = 2.6) +
+  geom_text(data = conv, aes(x = x, y = lab, label = conv), inherit.aes = FALSE,
+            hjust = 0, size = 2.6, color = "grey55") +
+  { if (!is.null(ann)) geom_text(data = ann, aes(x = x, y = lab, label = txt), inherit.aes = FALSE,
+            hjust = 0.5, vjust = 2.1, size = 2.7, color = "#D6604D") } +
+  facet_grid(mblk ~ ., scales = "free_y", space = "free_y") +
+  scale_color_manual(values = pal) +
+  scale_x_continuous(expand = expansion(mult = c(0.04, 0.18))) +
+  labs(title = "PPML — inférence clusterisée-paire vs bootstrap dyadique",
+       subtitle = "Intervalles de confiance à 95 % ; point = estimation PPML (identique aux deux méthodes)",
+       x = "Effet (semi-élasticité PPML)", y = NULL, color = NULL,
+       caption = paste0(
+         "Pigeonhole multinomial, Davezies–D'Haultfœuille–Guyonvarch (2021, §2.3), B = 200.\n",
+         "Bootstrap rééchantillonnant les pays : ~37–45 % des tirages mettent W[Russie]=0\n",
+         "(traitement non identifié, comptés en échec) → inférence conditionnelle à la\n",
+         "présence de la Russie dans le rééchantillon. À interpréter avec ce caveat.")) +
+  theme_minimal(base_size = 12) +
+  theme(plot.title = element_text(face = "bold", size = 13),
+        plot.subtitle = element_text(size = 10, color = "grey40"),
+        plot.caption = element_text(size = 7.5, color = "grey45", hjust = 0),
+        legend.position = "bottom", panel.grid.minor = element_blank(),
+        strip.text.y = element_text(angle = 0, face = "bold", size = 9),
+        plot.background = element_rect(fill = "white", color = NA),
+        panel.background = element_rect(fill = "white", color = NA))
+ggsave(file.path(PATH_FIG, "ppml_dyadic_bootstrap_forest.png"), p_for, width = 9, height = 6, dpi = 300)
+log_step(paste("Section 10 terminee : ecrit", file.path(PATH_FIG, "ppml_dyadic_bootstrap_forest.png")))
