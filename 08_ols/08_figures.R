@@ -25,6 +25,8 @@ local({
 PART <- "08_ols"
 PATH_TAB <- out_tab("EventStudy")
 PATH_FIG <- out_fig("EventStudy")
+# Locale UTF-8 : sans ca, le device PNG mange les accents (env. en locale C).
+suppressWarnings(Sys.setlocale("LC_CTYPE", "en_US.UTF-8"))
 
 theme_08 <- theme_minimal(base_size = 12) +
   theme(plot.title = element_text(face = "bold", size = 13),
