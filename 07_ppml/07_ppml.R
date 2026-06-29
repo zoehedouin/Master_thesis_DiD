@@ -16,7 +16,7 @@
 # Choix d'estimateur (delibere) : Sun & Abraham (2021) est le seul event-study
 # robuste a l'heterogeneite qui tourne NATIVEMENT en PPML (zeros gardes,
 # semi-elasticites, benchmark GSDB-R4). Callaway-Sant'Anna et dCDH sont lineaires
-# (logs) -> hors gravite ; dCDH est reserve a l'intensite 2022 en 08_dcdh.
+# (logs) -> hors gravite ; dCDH est reserve a l'intensite 2022 en 08_ols.
 #
 # VALIDITE AVANT EFFET : on lit (i) balance/sorting (-> 06_descriptives_did),
 # (ii) pre-tendances (incond. + cond. energie), (iii) HonestDiD, PUIS seulement
@@ -322,7 +322,7 @@ run_2x2_pretrends(
 
 log_step("Section 5 : event study Sun & Abraham (fenetre propre 2010-2021 + full 2008-2023).")
 # PRINCIPAL = fenetre 2010-2021 : exclut les leads de crise (2008-2009) ET les
-# lags de guerre (2022-2023, qui appartiennent a l'intensite -> 08_dcdh). Les
+# lags de guerre (2022-2023, qui appartiennent a l'intensite -> 08_ols). Les
 # onsets hors fenetre deviennent CONTROLES ; left-censored (onset < y0+1) exclus.
 # => effet 2014 NET, non contamine. SECONDAIRE = 2008-2023 (transparence guerre).
 run_es <- function(y0, y1, blo, bhi, label) {
@@ -381,7 +381,7 @@ ggsave(file.path(PATH_FIG, "sanctions_event_study.png"),
        width = 10, height = 6, dpi = 300)
 ggsave(file.path(PATH_FIG, "sanctions_event_study_full_window.png"),
        mk_es_plot(es_full$es, "Effect on trade with Russia (2008-2023, including the war years)",
-                  "Secondary view: the +5 bin absorbs 2022-2023 (intensification -> 08_dcdh). Read with this caveat."),
+                  "Secondary view: the +5 bin absorbs 2022-2023 (intensification -> 08_ols). Read with this caveat."),
        width = 10, height = 6, dpi = 300)
 
 
@@ -591,8 +591,206 @@ cat(sprintf("  Statique (treated_post)        : %.4f (p=%.4f)\n",
             static_csv[term=="treated_post" & model=="static_treated_post", estimate],
             static_csv[term=="treated_post" & model=="static_treated_post", p]))
 cat(sprintf("  ATT 2014 PROPRE (2010-2021)    : %.4f (p=%.4f)\n", att_clean$estimate, att_clean$p))
-cat(sprintf("  ATT full (2008-2023, guerre)   : %.4f (p=%.4f) [caveat : +5 absorbe 2022-23 -> 08_dcdh]\n",
+cat(sprintf("  ATT full (2008-2023, guerre)   : %.4f (p=%.4f) [caveat : +5 absorbe 2022-23 -> 08_ols]\n",
             att_full$estimate, att_full$p))
 cat("\n== Figures ==\n"); print(list.files(PATH_FIG))
 cat("== Tables ==\n");  print(list.files(PATH_TAB))
 log_step("07_ppml.R termine.")
+
+
+# =============================================================================
+# Section 9 : BOOTSTRAP PIGEONHOLE MULTINOMIAL (Davezies, D'Haultfoeuille &
+#             Guyonvarch 2021, Annals of Statistics, Section 2.3) — SE/IC/p-values
+#             robustes a la DEPENDANCE DYADIQUE sur les PPML pharses de ce script.
+# -----------------------------------------------------------------------------
+# ADDITIF STRICT : aucune section/sortie existante n'est modifiee. Reutilise les
+# helpers (log_step, write_tab, extract_coefs, tic/toc) et les conventions de
+# chemins. Schema (NE PAS confondre) : reechantillonnage au niveau PAYS, POPULATION
+# UNIQUE (exp & imp tires du meme ensemble) ; a chaque replication, comptes
+# MULTINOMIAUX W sur les pays ; poids d'une dyade-annee = W[exp]*W[imp] (entier) ;
+# refit du MEME fepois pondere (weights=~w) sur w>0, MEMES labels de FE (les pays
+# de poids 0 disparaissent naturellement). Ce n'est PAS Exp(1) i.i.d., PAS un
+# resampling de paires, PAS un cluster ~exp+imp. p-value = mean(|theta*-theta_hat|
+# > |theta_hat|) (convention Table 2 de l'article).
+# =============================================================================
+log_step("Section 9 : bootstrap pigeonhole multinomial (dependance dyadique).")
+suppressPackageStartupMessages(library(parallel))
+B_DYADIC   <- as.integer(Sys.getenv("B_DYADIC", "200"))  # surchargeable (test rapide)
+SEED_DYADIC <- 1234L
+N_WORKERS  <- max(1L, min(2L, parallel::detectCores() - 1L))  # plafonne RAM ~8 Go
+setFixest_nthreads(1)                                          # 1 thread / worker
+cat(sprintf("  - B = %d | workers = %d | 1 thread/worker\n", B_DYADIC, N_WORKERS))
+
+# Panel reduit aux seules colonnes utiles (limite les copies dans les forks).
+dfb <- df[, .(trade_value, exp_iso3, imp_iso3, year, pair, pkey,
+              rta, treated_post, rus_tr, rus_nt, under_any_sanction,
+              cell_2022, post2022)]
+rm(df); gc(verbose = FALSE)   # libere le grand panel original (non additif aux sorties)
+
+pigeonhole_boot_ppml <- function(fml, data, coefs_of_interest, model_name,
+                                 B = 200L, seed = 1234L,
+                                 country_cols = c("exp_iso3", "imp_iso3"),
+                                 workers = 1L, batch = 25L) {
+  t_all <- Sys.time()
+  # --- fit de base NON pondere : theta_hat + SE/p clusterises paire ---
+  m0  <- fepois(fml, data = data, cluster = ~ pkey)
+  ct0 <- as.data.table(coeftable(m0), keep.rownames = "term")
+  setnames(ct0, 2:5, c("estimate", "se_pair", "stat", "p_pair"))
+  coefs <- intersect(coefs_of_interest, ct0$term)
+  if (!length(coefs)) { cat("   !!", model_name, ": aucun coef d'interet present.\n"); return(NULL) }
+  base <- ct0[term %in% coefs]
+  theta_hat <- setNames(base$estimate, base$term)
+
+  # --- pre-calculs : index pays (population unique) ---
+  pays <- sort(unique(c(data[[country_cols[1]]], data[[country_cols[2]]])))
+  np <- length(pays)
+  exp_idx <- match(data[[country_cols[1]]], pays)
+  imp_idx <- match(data[[country_cols[2]]], pays)
+  cat(sprintf("   %s : %d coefs | %d pays | %d obs | theta_hat = %s\n", model_name,
+              length(coefs), np, nrow(data),
+              paste(sprintf("%s=%.4f", names(theta_hat), theta_hat), collapse = " ")))
+
+  # --- poids multinomiaux PRE-generes (reproductible, independant des workers) ---
+  set.seed(seed)
+  Wlist <- lapply(seq_len(B), function(b) tabulate(sample.int(np, np, replace = TRUE), np))
+
+  # --- diagnostic du pays FOCAL (Russie) : draws ou W[RUS]=0 -> traitement degenere
+  # (proba ~ e^-1 ~ 37% car le traitement est concentre sur 1 pays) -> explique le
+  # taux d'echec, ce n'est PAS un bug mais une limite intrinseque du pigeonhole pays.
+  rus_pos  <- match("RUS", pays)
+  n_focal0 <- if (!is.na(rus_pos)) sum(vapply(Wlist, function(W) W[rus_pos] == 0L, logical(1))) else NA_integer_
+  if (!is.na(n_focal0))
+    cat(sprintf("   %s : draws avec W[RUS]=0 (traitement degenere, attendu ~37%%) = %d/%d (%.0f%%)\n",
+                model_name, n_focal0, B, 100 * n_focal0 / B))
+
+  # --- checkpoint : reprise si draws deja sur disque pour ce modele ---
+  ckpt <- file.path(PATH_TAB, paste0("_pigeonhole_draws_", model_name, ".csv"))
+  draws <- NULL; done_b <- 0L
+  if (file.exists(ckpt)) {
+    draws <- fread(ckpt); done_b <- if (nrow(draws)) max(draws$b) else 0L
+    cat(sprintf("   reprise checkpoint : %d draws deja faits\n", done_b))
+  }
+
+  one_draw <- function(W) {
+    w <- W[exp_idx] * W[imp_idx]
+    keep <- which(w > 0)
+    dsub <- data[keep]; dsub[, w := w[keep]]
+    fit <- tryCatch(fepois(fml, data = dsub, weights = ~ w),
+                    error = function(e) NULL)
+    if (is.null(fit)) return(setNames(rep(NA_real_, length(coefs)), coefs))
+    cf <- coef(fit); out <- cf[coefs]; names(out) <- coefs; out
+  }
+
+  # --- boucle par batch (checkpoint au fil de l'eau, crash-safe) ---
+  if (done_b < B) for (start in seq(done_b + 1L, B, by = batch)) {
+    bs <- start:min(start + batch - 1L, B)
+    t0 <- Sys.time()
+    res <- if (workers > 1L) mclapply(Wlist[bs], one_draw, mc.cores = workers, mc.preschedule = FALSE)
+           else               lapply(Wlist[bs], one_draw)
+    mat <- do.call(rbind, res)
+    dt <- as.data.table(mat); dt[, b := bs]
+    fwrite(dt, ckpt, append = file.exists(ckpt))
+    draws <- rbind(draws, dt, fill = TRUE)
+    dts <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
+    nok <- sum(stats::complete.cases(mat))
+    cat(sprintf("   %s batch %d-%d : %.1fs (%.2fs/draw) | ok %d/%d\n",
+                model_name, min(bs), max(bs), dts, dts / length(bs), nok, length(bs)))
+  }
+
+  # --- agregation : SE bootstrap, IC percentile, p-value (convention article) ---
+  out <- rbindlist(lapply(coefs, function(cf) {
+    v <- draws[[cf]]; v <- v[is.finite(v)]; th <- theta_hat[[cf]]
+    data.table(model = model_name, term = cf, estimate = th,
+               se_pair = base[term == cf, se_pair], p_pair = base[term == cf, p_pair],
+               se_boot = sd(v),
+               ci_lo = as.numeric(quantile(v, 0.025)), ci_hi = as.numeric(quantile(v, 0.975)),
+               p_boot = mean(abs(v - th) > abs(th)),
+               n_draws_ok = length(v), fail_rate = 1 - length(v) / B,
+               n_focal_zero = n_focal0, boot_mean = mean(v))
+  }))
+  cat(sprintf("   %s : %.1f min | conv %.0f%% | max|theta_bar-theta_hat| = %.4g\n",
+              model_name, as.numeric(difftime(Sys.time(), t_all, units = "mins")),
+              100 * (1 - max(out$fail_rate)), max(abs(out$boot_mean - out$estimate))))
+  out
+}
+
+# --- Application aux specs pharses (memes formules que les sections precedentes) -
+FE_PPML <- ~ exp_iso3^year + imp_iso3^year + pair
+specs <- list(
+  list(name = "static_treated_post",
+       fml  = trade_value ~ treated_post + rta | exp_iso3^year + imp_iso3^year + pair,
+       coefs = "treated_post"),
+  list(name = "type_contrast_dir",
+       fml  = trade_value ~ rus_tr + rus_nt + rta + under_any_sanction | exp_iso3^year + imp_iso3^year + pair,
+       coefs = c("rus_tr", "rus_nt")),
+  list(name = "did_2x2_cell_x_post2022",
+       fml  = trade_value ~ i(cell_2022, post2022, ref = "d_neither") + rta + under_any_sanction | exp_iso3^year + imp_iso3^year + pair,
+       coefs = grep("^cell_2022::(a_both|b_condemn_only):post2022$",
+                    names(coef(m_2x2)), value = TRUE)))
+cat("  - Sun-Abraham agrege : SKIP (secondaire ; extraction de l'ATT agrege sous ponderation non triviale).\n")
+
+boot_res <- list()
+for (sp in specs) {
+  boot_res[[sp$name]] <- tryCatch(
+    pigeonhole_boot_ppml(sp$fml, dfb, sp$coefs, sp$name,
+                         B = B_DYADIC, seed = SEED_DYADIC, workers = N_WORKERS),
+    error = function(e) { cat("  !! spec", sp$name, "echouee :", conditionMessage(e), "\n"); NULL })
+}
+boot_tab <- rbindlist(Filter(Negate(is.null), boot_res), use.names = TRUE)
+
+if (nrow(boot_tab)) {
+  out_cols <- c("model","term","estimate","se_pair","p_pair","se_boot","ci_lo","ci_hi",
+                "p_boot","n_draws_ok","fail_rate","n_focal_zero")
+  write_tab(boot_tab[, ..out_cols], "tab_ppml_dyadic_bootstrap")
+  cat("\n  --- bootstrap pigeonhole (SE paire vs SE/IC/p dyadique) ---\n")
+  print(boot_tab[, .(model, term, est = round(estimate, 4),
+                     se_pair = round(se_pair, 4), se_boot = round(se_boot, 4),
+                     p_pair = round(p_pair, 4), p_boot = round(p_boot, 4),
+                     conv = round(1 - fail_rate, 2))])
+
+  # --- Resume markdown dans Reports/ ---
+  md <- c(
+    "# PPML — bootstrap pigeonhole multinomial (dépendance dyadique)",
+    "",
+    "> *Méthode : **pigeonhole multinomial**, Davezies, D'Haultfœuille & Guyonvarch",
+    "> (2021, *Annals of Statistics*, §2.3). Population pays unique (exp & imp tirés du",
+    sprintf("> même ensemble) ; comptes multinomiaux W ; poids dyade = W[exp]×W[imp] ; refit"),
+    sprintf("> `fepois` pondéré ; **B = %d** réplications. p-value = mean(|θ*−θ̂| > |θ̂|).*", B_DYADIC),
+    "",
+    sprintf("**⚠️ Limite intrinsèque (pays focal unique).** Le traitement est concentré sur **la Russie**. Le tirage multinomial sur la population de pays met **W[RUS]=0 avec proba ≈ e⁻¹ ≈ 37 %%** ; dans ces réplications, toutes les dyades-Russie ont un poids nul → plus aucune variation de traitement → le coefficient n'est pas identifié (draw **dégénéré**, compté en échec). C'est pourquoi `fail_rate ≈ 0,37` (≈ %d/%d draws W[RUS]=0) — **ce n'est pas un bug** mais une propriété du bootstrap pays avec un pays focal. Les SE/IC/p ci-dessous sont donc calculés sur les ~63 %% de réplications **non dégénérées**, et s'interprètent comme une inférence robuste à la dépendance dyadique **conditionnelle à la présence de la Russie dans le rééchantillon**.",
+                  boot_tab$n_focal_zero[1], B_DYADIC),
+    "",
+    "Comparaison SE **clusterisée-paire** (existante) vs SE/IC/**p** **bootstrap dyadique** :",
+    "",
+    "| modèle | coef | θ̂ | SE paire | p paire | SE boot | IC95 boot | p boot | conv. |",
+    "|---|---|---:|---:|---:|---:|---|---:|---:|")
+  for (i in seq_len(nrow(boot_tab))) with(boot_tab[i], {
+    md[[length(md) + 1]] <<- sprintf(
+      "| %s | %s | %.4f | %.4f | %.4f | %.4f | [%.4f ; %.4f] | %.4f | %.0f%% |",
+      model, term, estimate, se_pair, p_pair, se_boot, ci_lo, ci_hi, p_boot, 100*(1-fail_rate))
+  })
+  md <- c(md, "", "## Significativités qui changent (seuil 5 %)")
+  chg <- boot_tab[(p_pair < 0.05) != (p_boot < 0.05)]
+  if (nrow(chg)) for (i in seq_len(nrow(chg))) with(chg[i], {
+    md[[length(md) + 1]] <<- sprintf(
+      "- **%s / %s** : p paire = %.4f (%s) → p boot = %.4f (%s) — significativité %s.",
+      model, term, p_pair, ifelse(p_pair < 0.05, "sig", "n.s."),
+      p_boot, ifelse(p_boot < 0.05, "sig", "n.s."),
+      ifelse(p_boot < 0.05, "GAGNÉE", "PERDUE"))
+  }) else md <- c(md, "- Aucune : toutes les conclusions à 5 % sont inchangées entre SE paire et SE dyadique.")
+  fail_max <- max(boot_tab$fail_rate)
+  if (fail_max > 0.10) md <- c(md, "",
+    sprintf("> ⚠️ **Avertissement** : taux d'échec de convergence jusqu'à %.0f%% sur certains coefs (>10%%) — résultats conservés mais à lire avec prudence.", 100*fail_max))
+  md <- c(md, "", sprintf("*Convergence des réplications : %.0f%%–%.0f%%. Sanity : moyenne bootstrap ≈ θ̂ (écart max %.4g).*",
+                          100*(1-max(boot_tab$fail_rate)), 100*(1-min(boot_tab$fail_rate)),
+                          max(abs(boot_tab$boot_mean - boot_tab$estimate))))
+  writeLines(md, file.path(out_rep(), "report_ppml_dyadic_bootstrap.md"))
+  cat("  - ecrit Reports/report_ppml_dyadic_bootstrap.md\n")
+
+  # --- Validation loggee ---
+  cat(sprintf("\n  VALIDATION : convergence %.0f%%-%.0f%% | max|theta_bar-theta_hat| = %.4g\n",
+              100*(1-max(boot_tab$fail_rate)), 100*(1-min(boot_tab$fail_rate)),
+              max(abs(boot_tab$boot_mean - boot_tab$estimate))))
+  if (max(boot_tab$fail_rate) > 0.10) cat("  !! AVERTISSEMENT : fail_rate > 10% sur un coef (cf. md).\n")
+} else cat("  !! Aucun resultat bootstrap (toutes les specs ont echoue).\n")
+log_step("Section 9 (bootstrap pigeonhole) terminee.")

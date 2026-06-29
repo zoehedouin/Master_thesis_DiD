@@ -28,7 +28,7 @@
    hors crise 2008-09 et hors guerre 2022-23 → **effet 2014 net**. Leads pré-onset
    plats. Version **secondaire 2008-2023** (`sanctions_event_study_full_window.png`)
    conservée pour transparence : le bin +5 y **absorbe 2022-2023** (intensité →
-   `08_dcdh`), d'où un ATT plus négatif. **Conditionnelles à l'énergie**
+   `08_ols`), d'où un ATT plus négatif. **Conditionnelles à l'énergie**
    (`sanctions_by_energy_dependence.png`, `tab_pretrends_conditional.csv`) : par
    tercile (medium, high ; low **sans traité**) sur la fenêtre propre → pré-tendances
    à dépendance comparable.
@@ -78,7 +78,7 @@
   exemptions énergétiques.
 - **Event study (fenêtre propre 2010-2021)** : **ATT 2014 net = −0.40** (p<0.0001).
   Version full 2008-2023 = −0.60 (caveat : conflate l'onset 2014 et
-  l'intensification 2022 ; cette dernière relève de `08_dcdh`).
+  l'intensification 2022 ; cette dernière relève de `08_ols`).
 - **2×2 condamne × sanctionne** (`tab_2x2_did.csv`, réf. Neither-Russie × post-2022) :
   - Condamne + sanctionne : **−1.28** (p<10⁻¹¹) — attention : les « both »
     sanctionnent **depuis 2014**, donc ce coefficient mesure l'**escalade 2022
@@ -119,6 +119,6 @@
 ## À rédiger
 Interprétation économique du contraste expressif/matériel (cœur du mémoire), de
 l'effet 2014 net (−0.40, **robuste** : M̄=0.96) vs l'escalade 2022 (renvoyée à
-`08_dcdh`), du canal financier (commercial vidé par l'énergie, quasi-colinéaire), et
+`08_ols`), du canal financier (commercial vidé par l'énergie, quasi-colinéaire), et
 de la **fragilité** du canal expressif pur (`condemn_only`, M̄=0.00) — à présenter
 comme suggestif, le matériel (`a_both`, M̄=1.20) étant le résultat solide.

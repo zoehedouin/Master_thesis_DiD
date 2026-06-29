@@ -2,7 +2,7 @@
 # 10_robustness.R   (etape 6 — robustesses et tests de falsification)
 # -----------------------------------------------------------------------------
 # Tests de robustesse et de falsification du design DiD (feuille de route §6),
-# une fois les estimations principales obtenues (07_ppml.R, 08_dcdh.R) :
+# une fois les estimations principales obtenues (07_ppml.R, 08_ols.R) :
 #   * PLACEBOS : dates de traitement factices (cutoffs avances/recules) ;
 #     unites factices (paires jamais traitees assignees au traitement).
 #   * GROUPES DE CONTROLE / FENETRES alternatifs : restreindre/ponderer les

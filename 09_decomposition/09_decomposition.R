@@ -3,7 +3,7 @@
 # -----------------------------------------------------------------------------
 # A FAIRE UNE FOIS un resultat propre obtenu sur le commerce TOTAL (07/08).
 # Re-tourne les MEILLEURES specs (event study PPML de 07_ppml.R + AVSQ paliers
-# de 08_dcdh.R) sur les deux outcomes decomposes du panel strategique (02) :
+# de 08_ols.R) sur les deux outcomes decomposes du panel strategique (02) :
 #   * strategic_trade_value      (commerce strategique, HS6 — Aiyar et al. 2024)
 #   * non_strategic_trade        (= trade_value - strategic_trade_value)
 #
@@ -62,7 +62,7 @@ log_step(sprintf("panel strategique : %d lignes.", nrow(df)))
 ##    -> comparer les profils dynamiques (k=+1, +2, ...) entre les deux.
 ##
 ## 2. RE-TOURNER l'AVSQ did_multiplegt_dyn (paliers d'intensite 0/1/2-5/6+,
-##    spec de 08_dcdh.R, en logs) sur log(strategic+1) et log(non_strategic+1).
+##    spec de 08_ols.R, en logs) sur log(strategic+1) et log(non_strategic+1).
 ##    Reutiliser pkey, fenetre, et l'option SAMPLE_CONTROLS de 08.
 ##
 ## 3. LIRE LE MECANISME :

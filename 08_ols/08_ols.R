@@ -1,5 +1,5 @@
 # =============================================================================
-# 08_dcdh.R — fusion of 11 + 11b + 11c + 11d, + skeleton dist_lag_het
+# 08_ols.R — fusion of 11 + 11b + 11c + 11d, + skeleton dist_lag_het
 #             (feuille de route §4).
 # -----------------------------------------------------------------------------
 # §4.1  AVSQ : effet de l'INTENSITE des sanctions (dose) sur le commerce
@@ -17,7 +17,7 @@
 #         [11d]  robustesses (dose alternative, dose continue, lecture par type).
 #
 # §4.2  dist_lag_het / DistLagHet : raffinement distributed-lag heterogene
-#       (SKELETON — header + TODO uniquement, voir derniere section).
+#       (IMPLEMENTE dans le script dedie 08_distlag.R ; voir derniere section).
 #
 # -----------------------------------------------------------------------------
 # Decouverte motivante (cf. report Partie 1) : pour la Russie tous les types de
@@ -43,7 +43,7 @@ local({
     stop("00_setup.R introuvable en remontant depuis ", getwd())
   source(file.path(.d, "00_setup.R"))  # local=FALSE -> objets dans .GlobalEnv
 })
-PART <- "08_dcdh"   # co-localisation des sorties de cette partie (out_*)
+PART <- "08_ols"   # co-localisation des sorties de cette partie (out_*)
 
 # ---- Echantillonnage des controles (contrainte memoire 8 Go) ---------------
 # Les scripts 11* sous-echantillonnent les paires jamais-traitees (controles)
@@ -63,7 +63,7 @@ SAMPLE_CONTROLS <- TRUE   # FALSE = run full sample on a bigger machine (no cont
 # les placebos, onset 2014, escalade 2022-2023). VERBATIM des scripts 11*.
 YR_MIN <- 2008L; YR_MAX <- 2023L; N_CTRL <- 4000L; EFF <- 4L; PLA <- 2L
 
-# Sorties co-localisees dans 08_dcdh/{tables,figures} (out_* routent par PART).
+# Sorties co-localisees dans 08_ols/{tables,figures} (out_* routent par PART).
 PATH_TAB <- out_tab("EventStudy")
 PATH_FIG <- out_fig("EventStudy")
 
@@ -397,56 +397,10 @@ cat("  Russie : nb de cases actifs par type et par annee :\n"); print(by_type)
 log_step("Termine bloc C.")
 
 
-# ===== §4.2 dist_lag_het / DistLagHet (SKELETON — a implementer) =============
-# -----------------------------------------------------------------------------
-## TODO (feuille de route §4.2)
-#
-# OBJECTIF. Raffiner le §4.1 avec l'estimateur "distributed-lag heterogeneous"
-# de de Chaisemartin & D'Haultfoeuille. Ou le dCDH dynamique date l'effet au
-# 1er changement de dose, dist_lag_het SEPARE l'effet CONTEMPORAIN (beta0, effet
-# de la variation de dose de l'annee t) des effets RETARDES (beta1, beta2, ... :
-# variations de dose des annees t-1, t-2, ...). C'est exactement la question
-# "combien de l'impact 2022 vient du choc 2022 vs de l'accumulation depuis 2014".
-#
-# ARGUMENT (Theoreme 3, de Chaisemartin & D'Haultfoeuille). Une regression
-# distributed-lag TWFE naive (Y sur D_t, D_{t-1}, ... avec EF) est CONTAMINEE
-# sous heterogeneite des effets : chaque coefficient de lag melange des effets
-# d'autres lags avec des poids potentiellement negatifs. dist_lag_het corrige
-# en construisant des estimateurs robustes a l'heterogeneite, lag par lag.
-#
-# MISE EN OEUVRE (a coder ; aucune sortie / aucun chiffre fabrique ici) :
-#   1. Installation :
-#        remotes::install_github("chaisemartinpackages/dist_lag_het")
-#   2. Travailler en PREMIERES DIFFERENCES : Delta Y = Y_t - Y_{t-1} (donc
-#      Delta log_trade) et Delta D = D_t - D_{t-1} (variation de dose, p.ex.
-#      Delta tier ou Delta n_active_core), sur le panel pkey du §4.1.
-#   3. Variantes a estimer :
-#        - "base"            : beta0 + quelques lags, specification minimale.
-#        - "interactions"    : interactions (heterogeneite par covariables).
-#        - "full_dynamics"   : profil dynamique complet (tous les lags retenus).
-#   4. Inference : erreurs-standard par BOOTSTRAP (clustered au niveau paire pkey).
-#   5. Reporter : beta0 (contemporain) vs beta1, beta2, ... (retardes), + IC
-#      bootstrap, et comparer au profil event-study du §4.1.
-#
-# STUB (commente — le fichier doit parser ; AUCUNE analyse executee) :
-#
-# library(DistLagHet)                                  # nom du package R installe
-# dlh_panel <- copy(pk)                                # panel pkey du §4.1
-# setorder(dlh_panel, pkey, year)
-# dlh_panel[, dY := log_trade - shift(log_trade), by = pkey]   # Delta Y
-# dlh_panel[, dD := tier      - shift(tier),      by = pkey]   # Delta D (dose)
-# m_dlh <- dist_lag_het(
-#   data       = dlh_panel,
-#   delta_y    = "dY",
-#   delta_d    = "dD",
-#   group      = "gid",
-#   time       = "year",
-#   n_lags     = 2,                  # beta0 + beta1 + beta2
-#   variant    = "full_dynamics",    # ou "base" / "interactions"
-#   bootstrap  = TRUE,
-#   cluster    = "gid")
-# # saveRDS(m_dlh, file.path(PATH_TAB, "_dist_lag_het_obj.rds"))
-# # print(m_dlh)   # beta0 (contemporain) vs beta1, beta2 (retardes) + IC bootstrap
-#
-# FIN SKELETON §4.2.
+# ===== §4.2 dist_lag_het / DistLagHet — IMPLEMENTE dans 08_distlag.R ==========
+# Le skeleton (TODO + noms devines) a ete MIGRE et IMPLEMENTE dans le script
+# dedie 08_ols/08_distlag.R : estimateur distributed-lag robuste a l'heterogeneite
+# (package reel DistLagHet, estim_RC_model_unified), comparateur naif TWFE
+# (Theoreme 3), robustesse IHS, sur le meme panel pkey + meme exclusion
+# reporting-gap. Voir 08_distlag.R et 08_distlag_report.md.
 # =============================================================================

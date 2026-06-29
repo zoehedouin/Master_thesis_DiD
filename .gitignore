@@ -7,3 +7,4 @@
 # R session junk
 .Rhistory
 *.Rhistory
+07_ppml/tables/_pigeonhole_draws_*.csv
