@@ -1,0 +1,36 @@
+model,term,rel,estimate,se,lb,ub,direction,transform
+embargo|RUS_exp,Placebo_1   ,-1,-0.0737,0.11812,-0.30522,0.15782,RUS_exportateur,log1p
+embargo|RUS_exp,Placebo_2   ,-2,-0.12811,0.20079,-0.52164,0.26543,RUS_exportateur,log1p
+embargo|RUS_exp,Effect_1    ,1,-0.16596,0.1803,-0.51934,0.18742,RUS_exportateur,log1p
+embargo|RUS_exp,Effect_2    ,2,-0.59897,0.22119,-1.03249,-0.16545,RUS_exportateur,log1p
+embargo|RUS_exp,Effect_3    ,3,-0.48209,0.16926,-0.81383,-0.15035,RUS_exportateur,log1p
+embargo|RUS_exp,Effect_4    ,4,-0.72643,0.17659,-1.07254,-0.38031,RUS_exportateur,log1p
+embargo|RUS_exp,ATE,,-0.32055,0.09989,-0.51634,-0.12477,RUS_exportateur,log1p
+nonstrat_ne|RUS_imp,Placebo_1   ,-1,-0.02802,0.0835,-0.19168,0.13565,RUS_importateur,log1p
+nonstrat_ne|RUS_imp,Placebo_2   ,-2,-0.06823,0.09978,-0.2638,0.12735,RUS_importateur,log1p
+nonstrat_ne|RUS_imp,Effect_1    ,1,-0.03831,0.11346,-0.26068,0.18407,RUS_importateur,log1p
+nonstrat_ne|RUS_imp,Effect_2    ,2,-0.44888,0.12683,-0.69747,-0.20029,RUS_importateur,log1p
+nonstrat_ne|RUS_imp,Effect_3    ,3,-0.29545,0.10559,-0.50239,-0.08851,RUS_importateur,log1p
+nonstrat_ne|RUS_imp,Effect_4    ,4,-0.1898,0.11172,-0.40877,0.02917,RUS_importateur,log1p
+nonstrat_ne|RUS_imp,ATE,,-0.16,0.06092,-0.2794,-0.04059,RUS_importateur,log1p
+embargo|RUS_exp,Placebo_1   ,-1,-0.07141,0.12509,-0.31657,0.17376,RUS_exportateur,ihs
+embargo|RUS_exp,Placebo_2   ,-2,-0.15275,0.20821,-0.56084,0.25533,RUS_exportateur,ihs
+embargo|RUS_exp,Effect_1    ,1,-0.17194,0.19162,-0.54751,0.20362,RUS_exportateur,ihs
+embargo|RUS_exp,Effect_2    ,2,-0.6246,0.23513,-1.08545,-0.16374,RUS_exportateur,ihs
+embargo|RUS_exp,Effect_3    ,3,-0.50821,0.1777,-0.85649,-0.15993,RUS_exportateur,ihs
+embargo|RUS_exp,Effect_4    ,4,-0.75493,0.18509,-1.11771,-0.39216,RUS_exportateur,ihs
+embargo|RUS_exp,ATE,,-0.33453,0.10549,-0.5413,-0.12777,RUS_exportateur,ihs
+nonstrat_ne|RUS_imp,Placebo_1   ,-1,-0.02492,0.08913,-0.19962,0.14978,RUS_importateur,ihs
+nonstrat_ne|RUS_imp,Placebo_2   ,-2,-0.04866,0.10716,-0.25869,0.16138,RUS_importateur,ihs
+nonstrat_ne|RUS_imp,Effect_1    ,1,-0.03853,0.12617,-0.28582,0.20875,RUS_importateur,ihs
+nonstrat_ne|RUS_imp,Effect_2    ,2,-0.45515,0.13983,-0.72921,-0.1811,RUS_importateur,ihs
+nonstrat_ne|RUS_imp,Effect_3    ,3,-0.3015,0.11383,-0.5246,-0.0784,RUS_importateur,ihs
+nonstrat_ne|RUS_imp,Effect_4    ,4,-0.18089,0.11807,-0.4123,0.05051,RUS_importateur,ihs
+nonstrat_ne|RUS_imp,ATE,,-0.1607,0.06633,-0.29071,-0.03069,RUS_importateur,ihs
+strategic_ne|RUS_imp_EXPLO,Placebo_1   ,-1,-0.40015,0.16998,-0.73331,-0.067,RUS_importateur,log1p
+strategic_ne|RUS_imp_EXPLO,Placebo_2   ,-2,-0.12142,0.18176,-0.47767,0.23482,RUS_importateur,log1p
+strategic_ne|RUS_imp_EXPLO,Effect_1    ,1,-0.27795,0.17082,-0.61275,0.05686,RUS_importateur,log1p
+strategic_ne|RUS_imp_EXPLO,Effect_2    ,2,-0.31941,0.16959,-0.6518,0.01299,RUS_importateur,log1p
+strategic_ne|RUS_imp_EXPLO,Effect_3    ,3,-0.18714,0.19134,-0.56217,0.18789,RUS_importateur,log1p
+strategic_ne|RUS_imp_EXPLO,Effect_4    ,4,-0.07451,0.18636,-0.43978,0.29075,RUS_importateur,log1p
+strategic_ne|RUS_imp_EXPLO,ATE,,-0.14568,0.10372,-0.34897,0.0576,RUS_importateur,log1p
